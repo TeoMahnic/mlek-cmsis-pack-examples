@@ -35,13 +35,21 @@
 /* Platform dependent files */
 #include "RTE_Components.h"  /* Provides definition for CMSIS_device_header */
 #include CMSIS_device_header /* Gives us IRQ num, base addresses. */
-#include "BoardInit.hpp"      /* Board initialisation */
 #include "log_macros.h"      /* Logging macros (optional) */
+#include "main_vsi.h"
+#include "video_functions.h"
 
+#define CAMERA_FRAME_WIDTH      560
+#define CAMERA_FRAME_HEIGHT     560
+#define CAMERA_FRAME_SIZE       (CAMERA_FRAME_WIDTH * CAMERA_FRAME_HEIGHT * 3)
 
-#define IMAGE_WIDTH     192
-#define IMAGE_HEIGHT    192
-#define IMAGE_SIZE      (IMAGE_WIDTH * IMAGE_HEIGHT * 3)
+#define DISPLAY_FRAME_WIDTH     480
+#define DISPLAY_FRAME_HEIGHT    800
+#define DISPLAY_FRAME_SIZE      (DISPLAY_FRAME_WIDTH * DISPLAY_FRAME_HEIGHT * 3)
+
+#define IMAGE_WIDTH             192
+#define IMAGE_HEIGHT            192
+#define IMAGE_SIZE              (IMAGE_WIDTH * IMAGE_HEIGHT * 3)
 
 namespace arm {
 namespace app {
@@ -49,8 +57,9 @@ namespace app {
     static uint8_t tensorArena[ACTIVATION_BUF_SZ] ACTIVATION_BUF_ATTRIBUTE;
 
     /* Image buffer */
-    static uint8_t ImageBuf[IMAGE_SIZE] __attribute__((section("image_buf"), aligned(16)));
-    static uint8_t ImageOut[IMAGE_SIZE] __attribute__((section("image_buf"), aligned(16)));
+    static uint8_t ImageBuf[CAMERA_FRAME_SIZE] __attribute__((section(".bss.camera_frame_buf"), aligned(16)));
+    static uint8_t ImageOut[DISPLAY_FRAME_SIZE] __attribute__((section(".bss.lcd_frame_buf"), aligned(16)));
+    static uint8_t rgbImage[IMAGE_SIZE] __attribute__((aligned(32), section(".bss.camera_frame_bayer_to_rgb_buf")));
 
     /* Optional getter function for the model pointer and its size. */
     namespace object_detection {
@@ -79,11 +88,8 @@ static void DrawDetectionBoxes(uint8_t* image,
 __asm("  .global __ARM_use_no_argv\n");
 #endif
 
-int main()
+int app_main()
 {
-    /* Initialise the UART module to allow printf related functions (if using retarget) */
-    BoardInit();
-
     /* Model object creation and initialisation. */
     arm::app::YoloFastestModel model;
     if (!model.Init(arm::app::tensorArena,
@@ -157,24 +163,24 @@ int main()
 //  }
 
     /* Configure Input Video */
-    if (VideoDrv_Configure(VIDEO_DRV_IN0,  IMAGE_WIDTH, IMAGE_HEIGHT, VIDEO_DRV_COLOR_RGB888, 24U) != VIDEO_DRV_OK) {
+    if (VideoDrv_Configure(VIDEO_DRV_IN0,  CAMERA_FRAME_WIDTH, CAMERA_FRAME_HEIGHT, VIDEO_DRV_COLOR_RGB888, 60U) != VIDEO_DRV_OK) {
         printf_err("Failed to configure video input\n");
         return 1;
     }
 
     /* Configure Output Video */
-    if (VideoDrv_Configure(VIDEO_DRV_OUT0, IMAGE_WIDTH, IMAGE_HEIGHT, VIDEO_DRV_COLOR_RGB888, 24U) != VIDEO_DRV_OK) {
+    if (VideoDrv_Configure(VIDEO_DRV_OUT0, DISPLAY_FRAME_WIDTH, DISPLAY_FRAME_HEIGHT, VIDEO_DRV_COLOR_RGB888, 60U) != VIDEO_DRV_OK) {
         printf_err("Failed to configure video output\n");
         return 1;
     }
 
     /* Set Input Video buffer */
-    if (VideoDrv_SetBuf(VIDEO_DRV_IN0,  arm::app::ImageBuf, IMAGE_SIZE) != VIDEO_DRV_OK) {
+    if (VideoDrv_SetBuf(VIDEO_DRV_IN0,  arm::app::ImageBuf, CAMERA_FRAME_SIZE) != VIDEO_DRV_OK) {
         printf_err("Failed to set buffer for video input\n");
         return 1;
     }
     /* Set Output Video buffer */
-    if (VideoDrv_SetBuf(VIDEO_DRV_OUT0, arm::app::ImageOut, IMAGE_SIZE) != VIDEO_DRV_OK) {
+    if (VideoDrv_SetBuf(VIDEO_DRV_OUT0, arm::app::ImageOut, DISPLAY_FRAME_SIZE) != VIDEO_DRV_OK) {
         printf_err("Failed to set buffer for video output\n");
         return 1;
     }
@@ -203,8 +209,19 @@ int main()
         /* Get input video frame buffer */
         imgFrame = VideoDrv_GetFrameBuf(VIDEO_DRV_IN0);
 
+        int debayerState = CropAndDebayer(
+                            (uint8_t*)imgFrame,
+                            CAMERA_FRAME_WIDTH,
+                            CAMERA_FRAME_HEIGHT,
+                            (CAMERA_FRAME_WIDTH - IMAGE_WIDTH)/2,
+                            (CAMERA_FRAME_HEIGHT - IMAGE_HEIGHT)/2,
+                            (uint8_t*)arm::app::rgbImage,
+                            IMAGE_WIDTH,
+                            IMAGE_HEIGHT,
+                            GRBG);
+
         /* Run the pre-processing, inference and post-processing. */
-        if (!preProcess.DoPreProcess(imgFrame, imgSz)) {
+        if (!preProcess.DoPreProcess(arm::app::rgbImage, imgSz)) {
             printf_err("Pre-processing failed.\n");
             return 1;
         }
@@ -225,19 +242,21 @@ int main()
         /* Release input frame */
         VideoDrv_ReleaseFrame(VIDEO_DRV_IN0);
 
-        DrawDetectionBoxes((uint8_t *)imgFrame, inputImgCols, inputImgRows, results);
+        DrawDetectionBoxes((uint8_t *)arm::app::rgbImage, inputImgCols, inputImgRows, results);
 
         /* Get output video frame buffer */
         outFrame = VideoDrv_GetFrameBuf(VIDEO_DRV_OUT0);
 
         /* Copy image frame with detection boxes to output frame buffer */
-        memcpy(outFrame, imgFrame, IMAGE_SIZE);
+        for (uint32_t i = IMAGE_HEIGHT; i > 0; --i) {
+            memcpy((uint8_t*)outFrame + (i * DISPLAY_FRAME_WIDTH*3), arm::app::rgbImage + (i * IMAGE_WIDTH*3), IMAGE_WIDTH*3);
+        }
 
         /* Release output frame */
         VideoDrv_ReleaseFrame(VIDEO_DRV_OUT0);
 
         /* Start video output (single frame) */
-        VideoDrv_StreamStart(VIDEO_DRV_OUT0, VIDEO_DRV_MODE_SINGLE);
+        VideoDrv_StreamStart(VIDEO_DRV_OUT0, VIDEO_DRV_MODE_CONTINUOS);
 
         /* Check for end of stream (when using AVH with file as Video input) */
         if (status.eos != 0U) {

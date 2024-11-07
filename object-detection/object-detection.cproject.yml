@@ -22,11 +22,20 @@ project:
       - elf
       - bin
 
+  connections:
+    - connect: Video
+      consumes:
+        - VSI_VIDEO
+        - STDIN
+        - STDOUT
+        - STDERR
+
   groups:
     - group: MainStatic
       not-for-context:
         - .VSI-enabled
         - +Alif-E7-M55-HP
+        - +AppKit-E7
       files:
         - file: include/InputFiles.hpp
         - file: src/InputFiles.cpp
@@ -42,8 +51,12 @@ project:
     - group: MainVSI
       for-context:
         - .VSI-enabled
+        - +AppKit-E7
       files:
         - file: src/main_vsi.cpp
+        - file: include/main_vsi.h
+        - file: src/video_functions.c
+        - file: include/video_functions.h
 
     - group: Use Case
       files:
@@ -53,6 +66,7 @@ project:
             - +AVH-SSE-310
             - +AVH-SSE-315
             - +AVH-SSE-320
+            - +AppKit-E7
         - file: src/yolo-fastest_192_face_v4_vela_H256.tflite.cpp
           for-context:
             - +AVH-SSE-300-U55
@@ -118,5 +132,13 @@ project:
       for-context:
         - .VSI-enabled
 
+    - layer: $Board-Layer$
+      type: Board
+      for-context:
+        - +AppKit-E7
+
   components:
     - component: ARM::ML Eval Kit:Vision:Object detection
+    - component: tensorflow::Machine Learning:TensorFlow:Kernel&Ethos-U
+      for-context:
+        - +AppKit-E7
