@@ -22,11 +22,17 @@ project:
       - elf
       - bin
 
+  connections:
+    - connect: Video
+      consumes:
+        - VSI_VIDEO
+
   groups:
     - group: MainStatic
       not-for-context:
         - .VSI-enabled
         - +Alif-E7-M55-HP
+        - +AppKit-E7
       files:
         - file: include/InputFiles.hpp
         - file: src/InputFiles.cpp
@@ -46,6 +52,8 @@ project:
         - file: src/main_vsi.cpp
 
     - group: MainVideo
+      for-context:
+        - +AppKit-E7
       files:
         - file: src/main_video.cpp
         - file: include/main_video.h
@@ -63,6 +71,7 @@ project:
             - +AVH-SSE-300-U55
             - +AVH-SSE-310-U55
             - +Alif-E7-M55-HP
+            - +AppKit-E7
         - file: src/yolo-fastest_192_face_v4_vela_Y256.tflite.cpp
           for-context:
             - +AVH-SSE-300-U65
@@ -122,6 +131,11 @@ project:
     - layer: ../device/corstone/vsi/vsi.clayer.yml
       for-context:
         - .VSI-enabled
+
+    - layer: $Board-Layer$
+      type: Board
+      for-context:
+        - +AppKit-E7
 
   components:
     - component: ARM::ML Eval Kit:Vision:Object detection

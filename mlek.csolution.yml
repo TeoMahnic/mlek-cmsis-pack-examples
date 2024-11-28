@@ -45,7 +45,8 @@ solution:
 
     - pack: Keil::STM32F7xx_DFP@2.15.1
 
-    - pack: AlifSemiconductor::Ensemble@1.1.1
+    - pack: AlifSemiconductor::Ensemble@1.2.1
+    - pack: Keil::Ensemble_AppKit-E7_BSP@1.0.0-dev
 
   build-types:
     - type: Debug
@@ -147,6 +148,12 @@ solution:
         - ETHOSU55
         - USART_DRV_NUM: 4
 
+    - type: AppKit-E7
+      board: Alif Semiconductor::AppKit-E7
+      device: Alif Semiconductor::AE722F80F55D5LS:M55_HP
+      # variables:
+      #   - Board-Layer: <board_layer>.clayer.yml
+
   projects:
     # Object detection use case
     - project: ./object-detection/object-detection.cproject.yml
@@ -163,6 +170,7 @@ solution:
         - +AVH-SSE-320-U85
         - .Debug+Alif-E7-M55-HP
         - .Release+Alif-E7-M55-HP
+        - +AppKit-E7
 
     # Keyword Spotting (KWS) use case
     - project: ./kws/kws.cproject.yml
