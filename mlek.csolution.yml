@@ -51,7 +51,7 @@ solution:
     - type: Debug
       compiler: AC6
       debug: on
-      optimize: none
+      optimize: debug
 
     - type: Release
       compiler: AC6
