@@ -30,14 +30,13 @@
 #include "DetectorPostProcessing.hpp" /* Post Process */
 #include "DetectorPreProcessing.hpp"  /* Pre Process */
 #include "YoloFastestModel.hpp"       /* Model API */
-#include "video_drv.h"                /* Video Driver API */
+#include "main_video.h"
 
 /* Platform dependent files */
 #include "RTE_Components.h"  /* Provides definition for CMSIS_device_header */
 #include CMSIS_device_header /* Gives us IRQ num, base addresses. */
-#include "BoardInit.hpp"      /* Board initialisation */
 #include "log_macros.h"      /* Logging macros (optional) */
-
+#include "video_drv.h"       /* Video Driver API */
 
 #define IMAGE_WIDTH     192
 #define IMAGE_HEIGHT    192
@@ -48,9 +47,11 @@ namespace app {
     /* Tensor arena buffer */
     static uint8_t tensorArena[ACTIVATION_BUF_SZ] ACTIVATION_BUF_ATTRIBUTE;
 
-    /* Image buffer */
-    static uint8_t ImageBuf[IMAGE_SIZE] __attribute__((section("image_buf"), aligned(16)));
-    static uint8_t ImageOut[IMAGE_SIZE] __attribute__((section("image_buf"), aligned(16)));
+    /* RGB image buffer - cropped/scaled version of the original + debayered. */
+    static uint8_t rgbImage[IMAGE_SIZE];
+
+    /* LCD image buffer */
+    static uint8_t lcdImage[IMAGE_SIZE];
 
     /* Optional getter function for the model pointer and its size. */
     namespace object_detection {
@@ -65,25 +66,18 @@ typedef arm::app::object_detection::DetectionResult OdResults;
 /**
  * @brief Draws a boxes in the image using the object detection results vector.
  *
- * @param[out] image        Pointer to the start of the image.
+ * @param[out] rgbImage     Pointer to the start of the image.
  * @param[in]  width        Image width.
  * @param[in]  height       Image height.
  * @param[in]  results      Vector of object detection results.
  */
-static void DrawDetectionBoxes(uint8_t* image,
+static void DrawDetectionBoxes(uint8_t* rgbImage,
                                const uint32_t imageWidth,
                                const uint32_t imageHeight,
                                const std::vector<OdResults>& results);
 
-#if defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
-__asm("  .global __ARM_use_no_argv\n");
-#endif
-
-int main()
+int app_main()
 {
-    /* Initialise the UART module to allow printf related functions (if using retarget) */
-    BoardInit();
-
     /* Model object creation and initialisation. */
     arm::app::YoloFastestModel model;
     if (!model.Init(arm::app::tensorArena,
@@ -130,9 +124,9 @@ int main()
     const size_t imgSz = inputTensor->bytes < IMAGE_SIZE ?
                          inputTensor->bytes : IMAGE_SIZE;
 
-    if (sizeof(arm::app::ImageBuf) < imgSz) {
-        printf_err("Image buffer is insufficient\n");
-        return 1;
+    if (sizeof(arm::app::lcdImage) < imgSz) {
+        printf_err("RGB buffer is insufficient\n");
+        return 3;
     }
 
     /* Initialize Video Interface */
@@ -141,59 +135,45 @@ int main()
         return 1;
     }
 
-    /**
-     * Following section is commented out as we use VSI "camera" input by default.
-     * These lines can be uncommented to use VSI file interface instead - when using
-     * AVH in a headless environment or a remote instance.
-     */
-//  if (VideoDrv_SetFile(VIDEO_DRV_IN0,  "sample_image.png") != VIDEO_DRV_OK) {
-//      printf_err("Failed to set filename for video input\n");
-//      return 1;
-//  }
-    /* Set Output Video file (only when using AVH - default: Display) */
-//  if (VideoDrv_SetFile(VIDEO_DRV_OUT0, "output_image.png") != VIDEO_DRV_OK) {
-//      printf_err("Failed to set filename for video output\n");
-//      return 1;
-//  }
-
     /* Configure Input Video */
-    if (VideoDrv_Configure(VIDEO_DRV_IN0,  IMAGE_WIDTH, IMAGE_HEIGHT, VIDEO_DRV_COLOR_RGB888, 24U) != VIDEO_DRV_OK) {
+    if (VideoDrv_Configure(VIDEO_DRV_IN0,  IMAGE_WIDTH, IMAGE_HEIGHT, VIDEO_DRV_COLOR_RGB888, 60U) != VIDEO_DRV_OK) {
         printf_err("Failed to configure video input\n");
         return 1;
     }
-
     /* Configure Output Video */
-    if (VideoDrv_Configure(VIDEO_DRV_OUT0, IMAGE_WIDTH, IMAGE_HEIGHT, VIDEO_DRV_COLOR_RGB888, 24U) != VIDEO_DRV_OK) {
+    if (VideoDrv_Configure(VIDEO_DRV_OUT0, IMAGE_WIDTH, IMAGE_HEIGHT, VIDEO_DRV_COLOR_RGB888, 60U) != VIDEO_DRV_OK) {
         printf_err("Failed to configure video output\n");
         return 1;
     }
 
     /* Set Input Video buffer */
-    if (VideoDrv_SetBuf(VIDEO_DRV_IN0,  arm::app::ImageBuf, IMAGE_SIZE) != VIDEO_DRV_OK) {
+    if (VideoDrv_SetBuf(VIDEO_DRV_IN0,  arm::app::rgbImage, IMAGE_SIZE) != VIDEO_DRV_OK) {
         printf_err("Failed to set buffer for video input\n");
         return 1;
     }
     /* Set Output Video buffer */
-    if (VideoDrv_SetBuf(VIDEO_DRV_OUT0, arm::app::ImageOut, IMAGE_SIZE) != VIDEO_DRV_OK) {
+    if (VideoDrv_SetBuf(VIDEO_DRV_OUT0, arm::app::lcdImage, IMAGE_SIZE) != VIDEO_DRV_OK) {
         printf_err("Failed to set buffer for video output\n");
+        return 1;
+    }
+
+    /* Start video capture (single frame) */
+    if (VideoDrv_StreamStart(VIDEO_DRV_IN0, VIDEO_DRV_MODE_SINGLE) != VIDEO_DRV_OK) {
+        printf_err("Failed to start video capture\n");
         return 1;
     }
 
     auto dstPtr = static_cast<uint8_t*>(inputTensor->data.uint8);
 
     uint32_t imgCount = 0;
-    void    *imgFrame;
-    void    *outFrame;
+
+    void *rgbFrame;
+    void *lcdFrame;
 
     while (true) {
         VideoDrv_Status_t status;
-        results.clear();
 
-        /* Start video capture (single frame) */
-        if (VideoDrv_StreamStart(VIDEO_DRV_IN0, VIDEO_DRV_MODE_SINGLE) != VIDEO_DRV_OK) {
-            printf_err("Failed to start video capture\n");
-            return 1;
-        }
+        results.clear();
 
         /* Wait for video input frame */
         do {
@@ -201,53 +181,52 @@ int main()
         } while (status.buf_empty != 0U);
 
         /* Get input video frame buffer */
-        imgFrame = VideoDrv_GetFrameBuf(VIDEO_DRV_IN0);
+        rgbFrame = VideoDrv_GetFrameBuf(VIDEO_DRV_IN0);
+        /* Get output video frame buffer */
+        lcdFrame = VideoDrv_GetFrameBuf(VIDEO_DRV_OUT0);
+
+        /* Copy image frame */
+        memcpy(lcdFrame, rgbFrame, IMAGE_SIZE);
+
+        /* Release input frame */
+        VideoDrv_ReleaseFrame(VIDEO_DRV_IN0);
+
+        /* Start video capture (single frame) */
+        if (VideoDrv_StreamStart(VIDEO_DRV_IN0, VIDEO_DRV_MODE_SINGLE) != VIDEO_DRV_OK) {
+            printf_err("Failed to start video capture\n");
+            return 1;
+        }
 
         /* Run the pre-processing, inference and post-processing. */
-        if (!preProcess.DoPreProcess(imgFrame, imgSz)) {
+        if (!preProcess.DoPreProcess(lcdFrame, imgSz)) {
             printf_err("Pre-processing failed.\n");
             return 1;
         }
 
         /* Run inference over this image. */
-        printf("\rImage %" PRIu32 "; ", ++imgCount);
+        if (!(imgCount++ & 0xF)) {
+            printf("\rImage %" PRIu32 "; ", imgCount);
+        }
 
         if (!model.RunInference()) {
             printf_err("Inference failed.\n");
-            return 1;
+            return 2;
         }
 
         if (!postProcess.DoPostProcess()) {
             printf_err("Post-processing failed.\n");
-            return 1;
+            return 3;
         }
 
-        /* Release input frame */
-        VideoDrv_ReleaseFrame(VIDEO_DRV_IN0);
-
-        DrawDetectionBoxes((uint8_t *)imgFrame, inputImgCols, inputImgRows, results);
-
-        /* Get output video frame buffer */
-        outFrame = VideoDrv_GetFrameBuf(VIDEO_DRV_OUT0);
-
-        /* Copy image frame with detection boxes to output frame buffer */
-        memcpy(outFrame, imgFrame, IMAGE_SIZE);
+        /* Draw detection boxes to output frame buffer */
+        DrawDetectionBoxes((uint8_t *)lcdFrame, inputImgCols, inputImgRows, results);
 
         /* Release output frame */
         VideoDrv_ReleaseFrame(VIDEO_DRV_OUT0);
 
         /* Start video output (single frame) */
         VideoDrv_StreamStart(VIDEO_DRV_OUT0, VIDEO_DRV_MODE_SINGLE);
-
-        /* Check for end of stream (when using AVH with file as Video input) */
-        if (status.eos != 0U) {
-            while (VideoDrv_GetStatus(VIDEO_DRV_OUT0).buf_empty == 0U);
-            break;
-        }
     }
-
-    /* De-initialize Video Interface */
-    VideoDrv_Uninitialize();
 
     return 0;
 }
@@ -296,13 +275,13 @@ static void DrawBox(uint8_t* imageData,
     }
 }
 
-static void DrawDetectionBoxes(uint8_t* image,
+static void DrawDetectionBoxes(uint8_t* rgbImage,
                                const uint32_t imageWidth,
                                const uint32_t imageHeight,
                                const std::vector<OdResults>& results)
 {
     for (const auto& result : results) {
-        DrawBox(image, imageWidth, imageHeight, result);
+        DrawBox(rgbImage, imageWidth, imageHeight, result);
         printf("Detection :: [%" PRIu32 ", %" PRIu32
                          ", %" PRIu32 ", %" PRIu32 "]\n",
                 result.m_x0,

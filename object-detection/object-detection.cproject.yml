@@ -33,17 +33,10 @@ project:
         - file: src/sample_image.cpp
         - file: src/main_static.cpp
 
-    - group: MainLive
-      for-context:
-        - +Alif-E7-M55-HP
+    - group: MainVideo
       files:
-        - file: src/main_live.cpp
-
-    - group: MainVSI
-      for-context:
-        - .VSI-enabled
-      files:
-        - file: src/main_vsi.cpp
+        - file: src/main_video.cpp
+        - file: include/main_video.h
 
     - group: Use Case
       files:
