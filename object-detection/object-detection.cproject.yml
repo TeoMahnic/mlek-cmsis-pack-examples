@@ -45,6 +45,11 @@ project:
       files:
         - file: src/main_vsi.cpp
 
+    - group: MainVideo
+      files:
+        - file: src/main_video.cpp
+        - file: include/main_video.h
+
     - group: Use Case
       files:
         - file: src/yolo-fastest_192_face_v4.tflite.cpp
