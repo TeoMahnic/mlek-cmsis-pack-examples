@@ -32,6 +32,8 @@ layer:
         - file: include/BoardInit.hpp
 
   components:
+    - component: ARM::CMSIS:CORE
+
     - component: NXP::Device:CMSIS:MK64F12_header
     - component: NXP::Device:CMSIS:MK64F12_system
     - component: NXP::Device:SDK Drivers:adc

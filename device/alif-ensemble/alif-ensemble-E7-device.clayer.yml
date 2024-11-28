@@ -63,6 +63,8 @@ layer:
     - ARM_MODEL_USE_PMU_COUNTERS
 
   components:
+    - component: ARM::CMSIS:CORE
+
     - component: Arm::Machine Learning:NPU Support:Ethos-U Driver&Generic U55
     - component: tensorflow::Machine Learning:TensorFlow:Kernel&Ethos-U
 

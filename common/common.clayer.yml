@@ -28,7 +28,6 @@ layer:
         - file: include/ethosu_mem_config.h
 
   components:
-    - component: ARM::CMSIS:CORE
     - component: ARM::CMSIS:DSP&Source
     - component: ARM::CMSIS:NN Lib
     - component: tensorflow::Data Exchange:Serialization:flatbuffers

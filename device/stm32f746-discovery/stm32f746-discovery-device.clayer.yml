@@ -54,6 +54,8 @@ layer:
         - file: src/stm32f7xx/drivers/cmsis/device/system_stm32f7xx.c
 
   components:
+    - component: ARM::CMSIS:CORE
+
     - component: Keil::Device:STM32Cube HAL:Common
     - component: Keil::Device:STM32Cube HAL:Cortex
     - component: Keil::Device:STM32Cube HAL:DMA
