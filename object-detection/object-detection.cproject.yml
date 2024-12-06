@@ -39,18 +39,6 @@ project:
         - file: src/sample_image.cpp
         - file: src/main_static.cpp
 
-    - group: MainLive
-      for-context:
-        - +Alif-E7-M55-HP
-      files:
-        - file: src/main_live.cpp
-
-    - group: MainVSI
-      for-context:
-        - .VSI-enabled
-      files:
-        - file: src/main_vsi.cpp
-
     - group: MainVideo
       for-context:
         - +AppKit-E7
