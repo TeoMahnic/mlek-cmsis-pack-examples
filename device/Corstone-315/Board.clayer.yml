@@ -1,0 +1,50 @@
+layer:
+  type: Board
+  description: Board setup for AI/ML
+  for-board: ARM::SSE-315
+  for-device: ARM::SSE-315-FVP
+
+  connections:
+    - connect: Corstone-315
+      provides:
+        - AVH_VIDEO
+
+  define:
+    - ARM_MODEL_USE_PMU_COUNTERS
+
+  packs:
+    - pack: ARM::CMSIS
+    - pack: ARM::SSE_315_BSP@1.0.0
+
+  add-path:
+    - ./vsi
+
+  components:
+    - component: ARM::CMSIS:CORE
+
+    - component: ARM::Device:Definition
+    - component: ARM::Device:Startup&C Startup
+
+    - component: ARM::Device:Native Driver:Timeout
+    - component: ARM::Device:Native Driver:SysCounter
+    - component: ARM::Device:Native Driver:SysTimer
+
+    - component: tensorflow::Machine Learning:TensorFlow:Kernel&CMSIS-NN
+
+  groups:
+    - group: Board
+      files:
+        - file: ./main.c
+        - file: ./main.h
+        - file: ./uart_cmsdk_apb.c
+        - file: ./uart_stdout.h
+        - file: ./uart_config.h
+        - file: ./retarget.c
+    - group: Video
+      files:
+        - file: ./vsi/arm_vsi.h
+        - file: ./vsi/video_drv.c
+        - file: ./vsi/video_drv.h
+
+  linker:
+    - script: ./mps4-sse-315.sct
