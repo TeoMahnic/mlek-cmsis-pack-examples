@@ -31,11 +31,11 @@
 #include "DetectorPreProcessing.hpp"  /* Pre Process */
 #include "InputFiles.hpp"             /* Baked-in input (not needed for live data) */
 #include "YoloFastestModel.hpp"       /* Model API */
+#include "main_video.h"
 
 /* Platform dependent files */
 #include "RTE_Components.h"  /* Provides definition for CMSIS_device_header */
 #include CMSIS_device_header /* Gives us IRQ num, base addresses. */
-#include "BoardInit.hpp"      /* Board initialisation */
 #include "log_macros.h"      /* Logging macros (optional) */
 
 namespace arm {
@@ -55,11 +55,8 @@ namespace app {
 __asm("  .global __ARM_use_no_argv\n");
 #endif
 
-int main()
+int app_main()
 {
-    /* Initialise the UART module to allow printf related functions (if using retarget) */
-    BoardInit();
-
     /* Model object creation and initialisation. */
     arm::app::YoloFastestModel model;
     if (!model.Init(arm::app::tensorArena,

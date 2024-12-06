@@ -30,13 +30,13 @@
 #include "DetectorPostProcessing.hpp" /* Post Process */
 #include "DetectorPreProcessing.hpp"  /* Pre Process */
 #include "YoloFastestModel.hpp"       /* Model API */
+#include "main_video.h"
 
 /* Platform dependent files */
 #include "RTE_Components.h"  /* Provides definition for CMSIS_device_header */
 #include CMSIS_device_header /* Gives us IRQ num, base addresses. */
 #include "log_macros.h"      /* Logging macros (optional) */
 #include "video_drv.h"       /* Video Driver API */
-#include "main_video.h"
 
 #define IMAGE_WIDTH     192
 #define IMAGE_HEIGHT    192
@@ -48,10 +48,10 @@ namespace app {
     static uint8_t tensorArena[ACTIVATION_BUF_SZ] ACTIVATION_BUF_ATTRIBUTE;
 
     /* RGB image buffer - cropped/scaled version of the original + debayered. */
-    static uint8_t rgbImage[IMAGE_SIZE] __attribute__((section(".bss.rgb_buf"), aligned(16)));
+    static uint8_t rgbImage[IMAGE_SIZE];
 
     /* LCD image buffer */
-    static uint8_t lcdImage[IMAGE_SIZE] __attribute__((section(".bss.lcd_buf"), aligned(16)));
+    static uint8_t lcdImage[IMAGE_SIZE];
 
     /* Optional getter function for the model pointer and its size. */
     namespace object_detection {
@@ -124,7 +124,7 @@ int app_main()
     const size_t imgSz = inputTensor->bytes < IMAGE_SIZE ?
                          inputTensor->bytes : IMAGE_SIZE;
 
-    if (sizeof(arm::app::rgbImage) < imgSz) {
+    if (sizeof(arm::app::lcdImage) < imgSz) {
         printf_err("RGB buffer is insufficient\n");
         return 3;
     }
@@ -157,6 +157,12 @@ int app_main()
         return 1;
     }
 
+    /* Start video capture (single frame) */
+    if (VideoDrv_StreamStart(VIDEO_DRV_IN0, VIDEO_DRV_MODE_SINGLE) != VIDEO_DRV_OK) {
+        printf_err("Failed to start video capture\n");
+        return 1;
+    }
+
     auto dstPtr = static_cast<uint8_t*>(inputTensor->data.uint8);
 
     uint32_t imgCount = 0;
@@ -182,9 +188,23 @@ int app_main()
 
         /* Get input video frame buffer */
         rgbFrame = VideoDrv_GetFrameBuf(VIDEO_DRV_IN0);
+        /* Get output video frame buffer */
+        lcdFrame = VideoDrv_GetFrameBuf(VIDEO_DRV_OUT0);
+
+        /* Copy image frame */
+        memcpy(lcdFrame, rgbFrame, IMAGE_SIZE);
+
+        /* Release input frame */
+        VideoDrv_ReleaseFrame(VIDEO_DRV_IN0);
+
+        /* Start video capture (single frame) */
+        if (VideoDrv_StreamStart(VIDEO_DRV_IN0, VIDEO_DRV_MODE_SINGLE) != VIDEO_DRV_OK) {
+            printf_err("Failed to start video capture\n");
+            return 1;
+        }
 
         /* Run the pre-processing, inference and post-processing. */
-        if (!preProcess.DoPreProcess(rgbFrame, imgSz)) {
+        if (!preProcess.DoPreProcess(lcdFrame, imgSz)) {
             printf_err("Pre-processing failed.\n");
             return 1;
         }
@@ -204,15 +224,7 @@ int app_main()
             return 3;
         }
 
-        /* Get output video frame buffer */
-        lcdFrame = VideoDrv_GetFrameBuf(VIDEO_DRV_OUT0);
-
-        /* Copy image frame with detection boxes to output frame buffer */
-        memcpy(lcdFrame, rgbFrame, IMAGE_SIZE);
-
-        /* Release input frame */
-        VideoDrv_ReleaseFrame(VIDEO_DRV_IN0);
-
+        /* Draw detection boxes to output frame buffer */
         DrawDetectionBoxes((uint8_t *)lcdFrame, inputImgCols, inputImgRows, results);
 
         /* Release output frame */
