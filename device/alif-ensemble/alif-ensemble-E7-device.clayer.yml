@@ -30,7 +30,7 @@ layer:
         - file: ./src/gpio_wrapper.h
 
     - group: AudioHelpers
-      for-context: +Alif-E7-M55-HE
+      for-context: +Alif-DevKit-E7-HE
       files:
         - file: ./src/BoardAudioUtils.cpp
         - file: ./src/BoardPlotUtils.cpp
@@ -38,12 +38,12 @@ layer:
         - file: ./include/BoardPlotUtils.hpp
 
     - group: CameraHelpers
-      for-context: +Alif-E7-M55-HP
+      for-context: +Alif-DevKit-E7-HP
       files:
         - file: ./src/CameraCapture.cpp
 
     - group: Display
-      for-context: +Alif-E7-M55-HP
+      for-context: +Alif-DevKit-E7-HP
       files:
         - file: ./src/LcdDisplay.cpp
 
@@ -75,37 +75,45 @@ layer:
     - component: AlifSemiconductor::Device:Startup
 
     - component: AlifSemiconductor::Device:SOC Peripherals:DMA
-      for-context: +Alif-E7-M55-HE
+      for-context: +Alif-DevKit-E7-HE
 
     - component: AlifSemiconductor::Device:SOC Peripherals:I2S
-      for-context: +Alif-E7-M55-HE
+      for-context: +Alif-DevKit-E7-HE
 
     - component: AlifSemiconductor::Device:SOC Peripherals:I3C
-      for-context: +Alif-E7-M55-HP
+      for-context: +Alif-DevKit-E7-HP
 
     - component: AlifSemiconductor::Device:SOC Peripherals:CDC
-      for-context: +Alif-E7-M55-HP
+      for-context: +Alif-DevKit-E7-HP
 
     - component: AlifSemiconductor::Device:SOC Peripherals:MIPI CSI2
-      for-context: +Alif-E7-M55-HP
+      for-context: +Alif-DevKit-E7-HP
 
     - component: AlifSemiconductor::Device:SOC Peripherals:MIPI DSI
-      for-context: +Alif-E7-M55-HP
+      for-context: +Alif-DevKit-E7-HP
 
     - component: AlifSemiconductor::Device:SOC Peripherals:I2C
-      for-context: +Alif-E7-M55-HP
+      for-context: +Alif-DevKit-E7-HP
 
     - component: AlifSemiconductor::Device:SOC Peripherals:CPI
-      for-context: +Alif-E7-M55-HP
+      for-context: +Alif-DevKit-E7-HP
 
     - component: AlifSemiconductor::BSP:External peripherals:ILI9806E LCD panel
-      for-context: +Alif-E7-M55-HP
+      for-context: +Alif-DevKit-E7-HP
 
     - component: AlifSemiconductor::BSP:External peripherals:CAMERA Sensor ARX3A0
-      for-context: +Alif-E7-M55-HP
+      for-context: +Alif-DevKit-E7-HP
 
     - component: AlifSemiconductor::Device:SE runtime Services:core
-      for-context: +Alif-E7-M55-HP
+      for-context: +Alif-DevKit-E7-HP
 
     - component: AlifSemiconductor::Device:SE runtime Services:Initialization Helper
-      for-context: +Alif-E7-M55-HP
+      for-context: +Alif-DevKit-E7-HP
+
+
+  linker:
+    - script: ./alif-e7-m55-hp.sct
+      for-context: +Alif-DevKit-E7-HP
+
+    - script: ./alif-e7-m55-he.sct
+      for-context: +Alif-DevKit-E7-HE
