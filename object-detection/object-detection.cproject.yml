@@ -29,9 +29,11 @@ project:
 
   groups:
     - group: MainStatic
-      not-for-context:
-        - .VSI-enabled
-        - +Alif-E7-M55-HP
+      for-context:
+        - +AVH-SSE-300
+        - +AVH-SSE-310
+        - +AVH-SSE-315
+        - +AVH-SSE-320
       files:
         - file: include/InputFiles.hpp
         - file: src/InputFiles.cpp
@@ -55,7 +57,7 @@ project:
           for-context:
             - +AVH-SSE-300-U55
             - +AVH-SSE-310-U55
-            - +Alif-E7-M55-HP
+            - +Alif-DevKit-E7-HP-U55
         - file: src/yolo-fastest_192_face_v4_vela_Y256.tflite.cpp
           for-context:
             - +AVH-SSE-300-U65

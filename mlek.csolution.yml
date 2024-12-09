@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright 2022-2024 Arm Limited and/or its
+# SPDX-FileCopyrightText: Copyright 2022-2025 Arm Limited and/or its
 # affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -14,8 +14,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/2.4.0/tools/projmgr/schemas/csolution.schema.json
-
 solution:
   created-for: cmsis-toolbox@2.6.0
   compiler: AC6
@@ -26,7 +24,7 @@ solution:
     - pack: ARM::CMSIS-DSP@1.16.0
     - pack: ARM::CMSIS-NN@6.0.0
 
-    - pack: Arm::ethos-u-core-driver@1.24.8
+    - pack: ARM::ethos-u-core-driver@1.24.8
     - pack: tensorflow::flatbuffers@1.24.8
     - pack: tensorflow::gemmlowp@1.24.8
     - pack: tensorflow::kissfft@1.24.8
@@ -58,114 +56,107 @@ solution:
       debug: off
       optimize: speed
 
-    - type: VSI-enabled
-      compiler: AC6
-      debug: off
-      optimize: speed
-
   target-types:
     # Arm Corstone-300 targets
     - type: AVH-SSE-300
       board: ARM::V2M-MPS3-SSE-300-FVP
       device: ARM::SSE-300-MPS3
-      define:
-        - CORSTONE300_FVP
+      variables:
+        - Board-Layer: ../device/Corstone-300/Board.clayer.yml
 
     - type: AVH-SSE-300-U55
       board: ARM::V2M-MPS3-SSE-300-FVP
       device: ARM::SSE-300-MPS3
-      define:
-        - ETHOSU55
-        - CORSTONE300_FVP
+      variables:
+        - Board-Layer: ../device/Corstone-300/Board-U55.clayer.yml
 
     - type: AVH-SSE-300-U65
       board: ARM::V2M-MPS3-SSE-300-FVP
       device: ARM::SSE-300-MPS3
-      define:
-        - ETHOSU65
-        - CORSTONE300_FVP
+      variables:
+        - Board-Layer: ../device/Corstone-300/Board-U65.clayer.yml
 
     # Arm Corstone-310 targets
     - type: AVH-SSE-310
       board: ARM::V2M-MPS3-SSE-310
       device: ARM::SSE-310-MPS3_FVP
+      variables:
+        - Board-Layer: ../device/Corstone-310/Board.clayer.yml
 
     - type: AVH-SSE-310-U55
       board: ARM::V2M-MPS3-SSE-310
       device: ARM::SSE-310-MPS3_FVP
-      define:
-        - ETHOSU55
+      variables:
+        - Board-Layer: ../device/Corstone-310/Board-U55.clayer.yml
 
     - type: AVH-SSE-310-U65
       board: ARM::V2M-MPS3-SSE-310
       device: ARM::SSE-310-MPS3_FVP
-      define:
-        - ETHOSU65
+      variables:
+        - Board-Layer: ../device/Corstone-310/Board-U65.clayer.yml
 
     # Arm Corstone-315 targets
     - type: AVH-SSE-315
       board: ARM::SSE-315
       device: ARM::SSE-315-FVP
+      variables:
+        - Board-Layer: ../device/Corstone-315/Board.clayer.yml
 
     - type: AVH-SSE-315-U65
       board: ARM::SSE-315
       device: ARM::SSE-315-FVP
-      define:
-        - ETHOSU65
+      variables:
+        - Board-Layer: ../device/Corstone-315/Board-U65.clayer.yml
+
 
     # Arm Corstone-320 targets
     - type: AVH-SSE-320
       board: ARM::SSE-320
       device: ARM::SSE-320-FVP
+      variables:
+        - Board-Layer: ../device/Corstone-320/Board.clayer.yml
+
 
     - type: AVH-SSE-320-U85
       board: ARM::SSE-320
       device: ARM::SSE-320-FVP
-      define:
-        - ETHOSU85
+      variables:
+        - Board-Layer: ../device/Corstone-320/Board-U85.clayer.yml
 
     # Other targets
     - type: FRDM-K64F
       board: NXP::FRDM-K64F
       device: MK64FN1M0VLL12
+      variables:
+        - Board-Layer: ../device/frdm-k64f/Board.clayer.yml
 
     - type: STM32F746-DISCO
       board: STMicroelectronics::STM32F746G-Discovery
       device: STM32F746NGHx
+      variables:
+        - Board-Layer: ../device/stm32f746-discovery/Board.clayer.yml
 
-    - type: Alif-E7-M55-HP
+    - type: Alif-DevKit-E7-HP-U55
       board: Alif Semiconductor::DevKit-E7
       device: AE722F80F55D5LS:M55_HP
-      define:
-        - ETHOSU55
-        - USART_DRV_NUM: 2
+      variables:
+        - Board-Layer: ../device/alif-ensemble/Board-HP.clayer.yml
 
-    - type: Alif-E7-M55-HE
+    - type: Alif-DevKit-E7-HE-U55-128
       board: Alif Semiconductor::DevKit-E7
       device: AE722F80F55D5LS:M55_HE
-      define:
-        - ETHOSU55
-        - USART_DRV_NUM: 4
+      variables:
+        - Board-Layer: ../device/alif-ensemble/Board-HE.clayer.yml
 
   projects:
     # Object detection use case
     - project: ./object-detection/object-detection.cproject.yml
-      for-context:
-        - +AVH-SSE-300
-        - +AVH-SSE-300-U55
-        - +AVH-SSE-300-U65
-        - +AVH-SSE-310
-        - +AVH-SSE-310-U55
-        - +AVH-SSE-310-U65
-        - +AVH-SSE-315
-        - +AVH-SSE-315-U65
-        - +AVH-SSE-320
-        - +AVH-SSE-320-U85
-        - .Debug+Alif-E7-M55-HP
-        - .Release+Alif-E7-M55-HP
+      not-for-context:
+      - +FRDM-K64F
+      - +STM32F746-DISCO
+      - +Alif-DevKit-E7-HE-U55-128
 
     # Keyword Spotting (KWS) use case
     - project: ./kws/kws.cproject.yml
       not-for-context:
-        - .VSI-enabled
-        - +Alif-E7-M55-HP
+        - +Alif-DevKit-E7-HP-U55
