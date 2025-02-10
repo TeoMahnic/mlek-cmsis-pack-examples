@@ -14,16 +14,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/2.4.0/tools/projmgr/schemas/clayer.schema.json
-
 layer:
-
   description: NXP FRDM-K64F device related components and files.
+  type: Board
+  for-board: NXP::FRDM-K64F
+  for-device: MK64FN1M0VLL12
 
   groups:
     - group: Retarget
-      for-context:
-        - +FRDM-K64F
       files:
         - file: src/uart_stdout.h
         - file: src/uart_stdout.c
@@ -55,4 +53,6 @@ layer:
     - component: NXP::Device:SDK Utilities:serial_manager_uart
     - component: NXP::Device:Startup
     - component: NXP::Board Support:SDK Project Template:project_template&frdmk64f
-    - component: tensorflow::Machine Learning:TensorFlow:Kernel&CMSIS-NN
+
+  linker:
+    - script: ./frdm-k64f.sct
