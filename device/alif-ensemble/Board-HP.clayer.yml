@@ -1,0 +1,81 @@
+#  SPDX-FileCopyrightText: Copyright 2023-2024 Arm Limited and/or its
+#  affiliates <open-source-office@arm.com>
+#  SPDX-License-Identifier: Apache-2.0
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+layer:
+  description: Alif Ensemble E7 ML islands' CPU device layer (High-Performance and High-Efficiency Arm Cortex-M55 CPUs).
+  type: Board
+  for-board: Alif Semiconductor::DevKit-E7
+  for-device: AE722F80F55D5LS:M55_HP
+
+  groups:
+    - group: GPIO
+      add-path:
+        - ./include
+      files:
+        - file: ./src/GpioSignal.cpp
+        - file: ./include/GpioSignal.hpp
+        - file: ./src/gpio_wrapper.c
+        - file: ./src/gpio_wrapper.h
+
+    - group: CameraHelpers
+      files:
+        - file: ./src/CameraCapture.cpp
+
+    - group: Display
+      files:
+        - file: ./src/LcdDisplay.cpp
+
+    - group: Retarget
+      files:
+        - file: ./src/retarget.c
+        - file: ./src/uart_stdout.c
+        - file: ./src/uart_stdout.h
+
+    - group: Init
+      files:
+        - file: ./include/BoardInit.hpp
+        - file: ./src/BoardInit.cpp
+
+  define:
+    # For profiling under micro_time.cpp in TensorFlow Lite Micro pack
+    - ARM_MODEL_USE_PMU_COUNTERS
+    - ETHOSU55
+    - USART_DRV_NUM: 2
+
+  components:
+    - component: ARM::CMSIS:CORE
+
+    - component: Arm::Machine Learning:NPU Support:Ethos-U Driver&Generic U55
+
+    - component: AlifSemiconductor::Device:SOC Peripherals:USART
+    - component: AlifSemiconductor::Device:SOC Peripherals:GPIO
+    - component: AlifSemiconductor::Device:SOC Peripherals:PINCONF
+    - component: AlifSemiconductor::Device:SOC Peripherals:MHU
+    - component: AlifSemiconductor::Device:Startup&C Startup
+
+    - component: AlifSemiconductor::Device:SOC Peripherals:I3C
+    - component: AlifSemiconductor::Device:SOC Peripherals:CDC
+    - component: AlifSemiconductor::Device:SOC Peripherals:MIPI CSI2
+    - component: AlifSemiconductor::Device:SOC Peripherals:MIPI DSI
+    - component: AlifSemiconductor::Device:SOC Peripherals:I2C
+    - component: AlifSemiconductor::Device:SOC Peripherals:CPI
+    - component: AlifSemiconductor::BSP:External peripherals:ILI9806E LCD panel
+    - component: AlifSemiconductor::BSP:External peripherals:CAMERA Sensor ARX3A0
+    - component: AlifSemiconductor::Device:SE runtime Services:core&Source
+    - component: AlifSemiconductor::Device:SE runtime Services:Initialization Helper&Source
+
+  linker:
+    - script: ./alif-e7-m55-hp.sct

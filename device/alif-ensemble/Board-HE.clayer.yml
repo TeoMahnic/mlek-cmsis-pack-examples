@@ -14,10 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/2.4.0/tools/projmgr/schemas/clayer.schema.json
-
 layer:
   description: Alif Ensemble E7 ML islands' CPU device layer (High-Performance and High-Efficiency Arm Cortex-M55 CPUs).
+  type: Board
+  for-board: Alif Semiconductor::DevKit-E7
+  for-device: AE722F80F55D5LS:M55_HE
 
   groups:
     - group: GPIO
@@ -30,22 +31,11 @@ layer:
         - file: ./src/gpio_wrapper.h
 
     - group: AudioHelpers
-      for-context: +Alif-E7-M55-HE
       files:
         - file: ./src/BoardAudioUtils.cpp
         - file: ./src/BoardPlotUtils.cpp
         - file: ./include/BoardAudioUtils.hpp
         - file: ./include/BoardPlotUtils.hpp
-
-    - group: CameraHelpers
-      for-context: +Alif-E7-M55-HP
-      files:
-        - file: ./src/CameraCapture.cpp
-
-    - group: Display
-      for-context: +Alif-E7-M55-HP
-      files:
-        - file: ./src/LcdDisplay.cpp
 
     - group: Retarget
       files:
@@ -61,49 +51,22 @@ layer:
   define:
     # For profiling under micro_time.cpp in TensorFlow Lite Micro pack
     - ARM_MODEL_USE_PMU_COUNTERS
+    - ETHOSU55
+    - USART_DRV_NUM: 4
 
   components:
+    - component: ARM::CMSIS:CORE
+
     - component: Arm::Machine Learning:NPU Support:Ethos-U Driver&Generic U55
-    - component: tensorflow::Machine Learning:TensorFlow:Kernel&Ethos-U
 
     - component: AlifSemiconductor::Device:SOC Peripherals:USART
     - component: AlifSemiconductor::Device:SOC Peripherals:GPIO
     - component: AlifSemiconductor::Device:SOC Peripherals:PINCONF
     - component: AlifSemiconductor::Device:SOC Peripherals:MHU
-    - component: AlifSemiconductor::Device:Startup
+    - component: AlifSemiconductor::Device:Startup&C Startup
 
     - component: AlifSemiconductor::Device:SOC Peripherals:DMA
-      for-context: +Alif-E7-M55-HE
-
     - component: AlifSemiconductor::Device:SOC Peripherals:I2S
-      for-context: +Alif-E7-M55-HE
 
-    - component: AlifSemiconductor::Device:SOC Peripherals:I3C
-      for-context: +Alif-E7-M55-HP
-
-    - component: AlifSemiconductor::Device:SOC Peripherals:CDC
-      for-context: +Alif-E7-M55-HP
-
-    - component: AlifSemiconductor::Device:SOC Peripherals:MIPI CSI2
-      for-context: +Alif-E7-M55-HP
-
-    - component: AlifSemiconductor::Device:SOC Peripherals:MIPI DSI
-      for-context: +Alif-E7-M55-HP
-
-    - component: AlifSemiconductor::Device:SOC Peripherals:I2C
-      for-context: +Alif-E7-M55-HP
-
-    - component: AlifSemiconductor::Device:SOC Peripherals:CPI
-      for-context: +Alif-E7-M55-HP
-
-    - component: AlifSemiconductor::BSP:External peripherals:ILI9806E LCD panel
-      for-context: +Alif-E7-M55-HP
-
-    - component: AlifSemiconductor::BSP:External peripherals:CAMERA Sensor ARX3A0
-      for-context: +Alif-E7-M55-HP
-
-    - component: AlifSemiconductor::Device:SE runtime Services:core
-      for-context: +Alif-E7-M55-HP
-
-    - component: AlifSemiconductor::Device:SE runtime Services:Initialization Helper
-      for-context: +Alif-E7-M55-HP
+  linker:
+    - script: ./alif-e7-m55-he.sct
