@@ -31,7 +31,6 @@ layer:
     - component: ARM::Device:Native Driver:SysTimer
 
     - component: Arm::Machine Learning:NPU Support:Ethos-U Driver&Generic U55
-    - component: tensorflow::Machine Learning:TensorFlow:Kernel&Ethos-U
 
   groups:
     - group: Board

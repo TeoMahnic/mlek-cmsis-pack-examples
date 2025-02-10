@@ -30,8 +30,6 @@ layer:
     - component: ARM::Device:Native Driver:SysCounter
     - component: ARM::Device:Native Driver:SysTimer
 
-    - component: tensorflow::Machine Learning:TensorFlow:Kernel&CMSIS-NN
-
   groups:
     - group: Board
       files:
