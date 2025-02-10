@@ -14,24 +14,20 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Open-CMSIS-Pack/devtools/schemas/projmgr/2.4.0/tools/projmgr/schemas/clayer.schema.json
-
 layer:
-
   description: ST Micro STM32F746G-Discovery device related components and files.
+  type: Board
+  for-board: STMicroelectronics::STM32F746G-Discovery
+  for-device: STM32F746NGHx
 
   groups:
     - group: Retarget
-      for-context:
-        - +STM32F746-DISCO
       files:
         - file: src/retarget.c
         - file: src/uart_stdout.c
         - file: src/uart_stdout.h
 
     - group: Device
-      for-context:
-        - +STM32F746-DISCO
       files:
         - file: src/BoardInit.cpp
         - file: src/BoardAudioUtils.cpp
@@ -42,9 +38,6 @@ layer:
         - file: include/BoardPlotUtils.hpp
 
     - group: Startup
-      for-context:
-        - +STM32F746-DISCO
-
       files:
         - file: src/stm32f7xx/drivers/cmsis/device/startup_stm32f746xx.s
           for-compiler: AC6
@@ -68,7 +61,6 @@ layer:
     - component: Keil::Device:STM32Cube HAL:TIM
     - component: Keil::Device:STM32Cube HAL:UART
     - component: Keil::Device:STM32Cube Framework:Classic
-    - component: tensorflow::Machine Learning:TensorFlow:Kernel&CMSIS-NN
 
     # We don't use the start up template because we want to override the heap
     # and stack sizes.
@@ -79,3 +71,6 @@ layer:
     - component: Keil::Board Support&STM32F746G-Discovery:Drivers:Audio
     - component: Keil::Board Support&STM32F746G-Discovery:Drivers:LCD
     - component: Keil::Board Support&STM32F746G-Discovery:Drivers:Basic I/O
+
+  linker:
+    - script: ./stm32f746-disco.sct
