@@ -22,6 +22,11 @@ project:
       - elf
       - bin
 
+  connections:
+    - connect: Video
+      consumes:
+        - AVH_VIDEO
+
   groups:
     - group: MainStatic
       not-for-context:
@@ -66,26 +71,8 @@ project:
   layers:
     - layer: ../common/common.clayer.yml
 
-    - layer: ../device/corstone/corstone-device.clayer.yml
-      for-context:
-        - +AVH-SSE-300
-        - +AVH-SSE-300-U55
-        - +AVH-SSE-300-U65
-        - +AVH-SSE-310
-        - +AVH-SSE-310-U55
-        - +AVH-SSE-310-U65
-        - +AVH-SSE-315
-        - +AVH-SSE-315-U65
-        - +AVH-SSE-320
-        - +AVH-SSE-320-U85
-
-    - layer: ../device/alif-ensemble/alif-ensemble-E7-device.clayer.yml
-      for-context:
-        - +Alif-E7-M55-HP
-
-    - layer: ../device/corstone/vsi/vsi.clayer.yml
-      for-context:
-        - .VSI-enabled
+    - layer: $Board-Layer$
+      type: Board
 
   components:
     - component: ARM::ML Eval Kit:Vision:Object detection
