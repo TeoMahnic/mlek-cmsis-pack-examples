@@ -89,30 +89,9 @@ project:
 
   layers:
     - layer: ../common/common.clayer.yml
-    - layer: ../device/corstone/corstone-device.clayer.yml
-      for-context:
-        - +AVH-SSE-300
-        - +AVH-SSE-300-U55
-        - +AVH-SSE-300-U65
-        - +AVH-SSE-310
-        - +AVH-SSE-310-U55
-        - +AVH-SSE-310-U65
-        - +AVH-SSE-315
-        - +AVH-SSE-315-U65
-        - +AVH-SSE-320
-        - +AVH-SSE-320-U85
 
-    - layer: ../device/frdm-k64f/frdm-k64f-device.clayer.yml
-      for-context:
-        - +FRDM-K64F
-
-    - layer: ../device/stm32f746-discovery/stm32f746-discovery-device.clayer.yml
-      for-context:
-        - +STM32F746-DISCO
-
-    - layer: ../device/alif-ensemble/alif-ensemble-E7-device.clayer.yml
-      for-context:
-        - +Alif-E7-M55-HE
+    - layer: $Board-Layer$
+      type: Board
 
   components:
     - component: ARM::ML Eval Kit:Voice:Keyword spotting
