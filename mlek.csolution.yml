@@ -43,7 +43,8 @@ solution:
 
     - pack: Keil::STM32F7xx_DFP@2.15.1
 
-    - pack: AlifSemiconductor::Ensemble@1.1.1
+    - pack: AlifSemiconductor::Ensemble@1.2.1
+    - pack: Keil::Ensemble_AppKit-E7_BSP@1.0.0-dev
 
   build-types:
     - type: Debug
@@ -148,6 +149,12 @@ solution:
       variables:
         - Board-Layer: ../device/alif-ensemble/Board-HE.clayer.yml
 
+    - type: Alif-AppKit-E7-HP-U55
+      board: Alif Semiconductor::AppKit-E7
+      device: Alif Semiconductor::AE722F80F55D5LS:M55_HP
+      # variables:
+      #   - Board-Layer: <board_layer>.clayer.yml
+
   projects:
     # Object detection use case
     - project: ./object-detection/object-detection.cproject.yml
@@ -160,3 +167,4 @@ solution:
     - project: ./kws/kws.cproject.yml
       not-for-context:
         - +Alif-DevKit-E7-HP-U55
+        - +Alif-AppKit-E7-HP-U55
