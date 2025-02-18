@@ -19,6 +19,15 @@
 #ifndef MAIN_H__
 #define MAIN_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Prototypes */
 extern int app_main     (void);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

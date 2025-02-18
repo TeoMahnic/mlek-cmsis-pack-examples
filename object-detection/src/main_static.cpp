@@ -31,7 +31,7 @@
 #include "DetectorPreProcessing.hpp"  /* Pre Process */
 #include "InputFiles.hpp"             /* Baked-in input (not needed for live data) */
 #include "YoloFastestModel.hpp"       /* Model API */
-#include "main_video.h"
+#include "main.h"
 
 /* Platform dependent files */
 #include "RTE_Components.h"  /* Provides definition for CMSIS_device_header */

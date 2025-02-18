@@ -38,7 +38,6 @@ project:
       for-context: \.*-U[0-9]{2}.*
       files:
         - file: src/main_video.cpp
-        - file: include/main_video.h
 
     - group: Use Case
       files:

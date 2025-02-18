@@ -30,7 +30,7 @@
 #include "DetectorPostProcessing.hpp" /* Post Process */
 #include "DetectorPreProcessing.hpp"  /* Pre Process */
 #include "YoloFastestModel.hpp"       /* Model API */
-#include "main_video.h"
+#include "main.h"
 
 /* Platform dependent files */
 #include "RTE_Components.h"  /* Provides definition for CMSIS_device_header */
