@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2022-2024 Arm Limited and/or its
+ * SPDX-FileCopyrightText: Copyright 2025 Arm Limited and/or its
  * affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -24,20 +24,24 @@
  * the memory requirements for TensorFlow Lite Micro framework and
  * some heap for the API runtime.
  */
+#include <cstdint>
+#include <string>
+#include <vector>
+
 #include "AudioUtils.hpp"
-#include "BufAttributes.hpp" /* Buffer attributes to be applied */
-#include "Classifier.hpp"    /* Classifier for the result */
-#include "InputFiles.hpp"    /* Baked-in input (not needed for live data) */
-#include "KwsProcessing.hpp" /* Pre and Post Process */
-#include "KwsResult.hpp"
-#include "Labels.hpp" /* Label Data for the model */
-#include "MicroNetKwsMfcc.hpp"
+#include "AudioSource.hpp"      /* Interface to audio data array */
+
+#include "BufAttributes.hpp"    /* Buffer attributes to be applied */
+#include "Classifier.hpp"       /* Classifier for the result */
+#include "KwsProcessing.hpp"    /* Pre and Post Process */
+#include "KwsResult.hpp"        /* KWS results class */
+#include "Labels.hpp"           /* Label Data for the model */
 #include "MicroNetKwsModel.hpp" /* Model API */
 
+#include "cmsis_os2.h"          /* CMSIS-RTOS2 API */
+
 /* Platform dependent files */
-#include "RTE_Components.h"  /* Provides definition for CMSIS_device_header */
-#include CMSIS_device_header /* Gives us IRQ num, base addresses. */
-#include "BoardInit.hpp"      /* Board initialisation */
+#include "main.h"
 #include "log_macros.h"      /* Logging macros (optional) */
 
 namespace arm {
@@ -53,15 +57,8 @@ namespace app {
 } /* namespace app */
 } /* namespace arm */
 
-#if defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
-__asm("  .global __ARM_use_no_argv\n");
-#endif
-
-int main()
+void app_main_thread(void *arg)
 {
-    /* Initialise the UART module to allow printf related functions (if using retarget) */
-    BoardInit();
-
     /* Model object creation and initialisation. */
     arm::app::MicroNetKwsModel model;
     if (!model.Init(arm::app::tensorArena,
@@ -69,7 +66,7 @@ int main()
                     arm::app::kws::GetModelPointer(),
                     arm::app::kws::GetModelLen())) {
         printf_err("Failed to initialise model\n");
-        return 1;
+        return;
     }
 
     constexpr int minTensorDims = static_cast<int>(
@@ -86,10 +83,10 @@ int main()
     TfLiteTensor* outputTensor = model.GetOutputTensor(0);
     if (!inputTensor->dims) {
         printf_err("Invalid input tensor dims\n");
-        return 1;
+        return;
     } else if (inputTensor->dims->size < minTensorDims) {
         printf_err("Input tensor dimension should be >= %d\n", minTensorDims);
-        return 1;
+        return;
     }
 
     /* Get input shape for feature extraction. */
@@ -123,72 +120,85 @@ int main()
     arm::app::KwsPostProcess postProcess =
         arm::app::KwsPostProcess(outputTensor, classifier, labels, singleInfResult);
 
-    /* Creating a sliding window through the whole audio clip. */
-    auto audioDataSlider =
-        arm::app::audio::SlidingWindow<const int16_t>(get_audio_array(0),
-                                                      get_audio_array_size(0),
-                                                      preProcess.m_audioDataWindowSize,
-                                                      preProcess.m_audioDataStride);
+    uint32_t file_idx{0};
+    uint32_t inferenceCount{0};
+    std::string lastValidKeywordDetected{};
 
-    debug("Using audio data from %s\n", get_filename(0));
+    while (is_file_available(file_idx)) {
 
-    while (audioDataSlider.HasNext()) {
-        const int16_t* inferenceWindow = audioDataSlider.Next();
+        debug("Using audio data from %s\n", get_filename(file_idx));
 
-        info(
-            "Inference %zu/%zu\n", audioDataSlider.Index() + 1, audioDataSlider.TotalStrides() + 1);
+        /* Creating a sliding window through the whole audio clip. */
+        auto audioDataSlider = arm::app::audio::SlidingWindow<const int16_t>(get_audio_array(file_idx),
+                                                                             get_audio_array_size(file_idx),
+                                                                             preProcess.m_audioDataWindowSize,
+                                                                             preProcess.m_audioDataStride);
+        file_idx++;
 
-        /* Run the pre-processing, inference and post-processing. */
-        if (!preProcess.DoPreProcess(inferenceWindow, audioDataSlider.Index())) {
-            printf_err("Pre-processing failed.");
-            return 1;
-        }
+        /* Reset sliding window position */
+        audioDataSlider.Reset();
 
-        if (!model.RunInference()) {
-            printf_err("Inference failed.");
-            return 2;
-        }
+        while (audioDataSlider.HasNext()) {
+            const int16_t* inferenceWindow = audioDataSlider.Next();
 
-        if (!postProcess.DoPostProcess()) {
-            printf_err("Post-processing failed.");
-            return 3;
-        }
+            /* Run the pre-processing, inference and post-processing. */
+            if (!preProcess.DoPreProcess(inferenceWindow, audioDataSlider.Index())) {
+                printf_err("Pre-processing failed.");
+                return;
+            }
 
-        /* Add results from this window to our final results vector. */
-        finalResults.emplace_back(arm::app::kws::KwsResult(
-            singleInfResult,
-            audioDataSlider.Index() * secondsPerSample * preProcess.m_audioDataStride,
-            audioDataSlider.Index(),
-            scoreThreshold));
-    } /* while (audioDataSlider.HasNext()) */
+            info("Inference #: %" PRIu32 "\n", ++inferenceCount);
 
-    for (const auto& result : finalResults) {
+            if (!model.RunInference()) {
+                printf_err("Inference failed.");
+                return;
+            }
 
-        std::string topKeyword{"<none>"};
-        float score = 0.f;
-        if (!result.m_resultVec.empty()) {
-            topKeyword = result.m_resultVec[0].m_label;
-            score      = result.m_resultVec[0].m_normalisedVal;
-        }
+            if (!postProcess.DoPostProcess()) {
+                printf_err("Post-processing failed.");
+                return;
+            }
 
-        if (result.m_resultVec.empty()) {
-            info("For timestamp: %f (inference #: %" PRIu32 "); label: %s; threshold: %f\n",
-                 result.m_timeStamp,
-                 result.m_inferenceNumber,
-                 topKeyword.c_str(),
-                 result.m_threshold);
-        } else {
-            for (uint32_t j = 0; j < result.m_resultVec.size(); ++j) {
-                info("For timestamp: %f (inference #: %" PRIu32
-                     "); label: %s, score: %f; threshold: %f\n",
-                     result.m_timeStamp,
-                     result.m_inferenceNumber,
-                     result.m_resultVec[j].m_label.c_str(),
-                     result.m_resultVec[j].m_normalisedVal,
-                     result.m_threshold);
+            /* Add results from this window to our final results vector. */
+            finalResults.emplace_back(arm::app::kws::KwsResult(
+                singleInfResult,
+                audioDataSlider.Index() * secondsPerSample * preProcess.m_audioDataStride,
+                audioDataSlider.Index(),
+                scoreThreshold));
+        } /* while (audioDataSlider.HasNext()) */
+
+        for (const auto& result : finalResults) {
+
+            std::string topKeyword{"<none>"};
+            float score = 0.f;
+            if (!result.m_resultVec.empty()) {
+                topKeyword = result.m_resultVec[0].m_label;
+                score      = result.m_resultVec[0].m_normalisedVal;
+
+                if (topKeyword != "<none>" && topKeyword != "_unknown_") {
+
+                    if (lastValidKeywordDetected != topKeyword) {
+                        /* Update last keyword. */
+                        lastValidKeywordDetected = topKeyword;
+                        info("Detected: %s; Prob: %0.2f\n", topKeyword.c_str(), score);
+                        std::string dispStr = " Last Keyword: " + topKeyword;
+                    }
+                }
             }
         }
-    }
 
+        finalResults.clear();
+    }
+}
+
+/* Application initialization */
+int app_main (void) {
+    const osThreadAttr_t attr = {
+        .stack_size = 4096,
+    };
+    /* Initialize CMSIS-RTOS2, create application thread and start the kernel */
+    osKernelInitialize();
+    osThreadNew(app_main_thread, NULL, &attr);
+    osKernelStart();
     return 0;
 }

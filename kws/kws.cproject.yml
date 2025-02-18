@@ -21,6 +21,10 @@ project:
       - bin
 
   groups:
+    - group: Keyword Spotting Main
+      files:
+        - file: src/main_kws.cpp
+
     - group: Wav file based example
       for-context:
         - +AVH-SSE-300
@@ -36,10 +40,8 @@ project:
         - +FRDM-K64F
 
       files:
-        - file: include/InputFiles.hpp
-        - file: src/InputFiles.cpp
+        - file: src/AudioSource_WAV.cpp
         - file: src/sample_audio.cpp
-        - file: src/main_wav.cpp
 
     - group: Live audio based example
       for-context:
@@ -47,14 +49,13 @@ project:
         - +Alif-DevKit-E7-HE-U55-128
 
       files:
-        - file: src/main_live.cpp
+        - file: src/AudioSource_Live.cpp
+        - file: include/AudioSource.hpp
 
     - group: Use Case
       files:
         - file: src/Labels.cpp
         - file: include/Labels.hpp
-        - file: include/BufAttributes.hpp
-        - file: include/ethosu_mem_config.h
 
         - file: src/kws_micronet_m_vela_H128.tflite.cpp
           for-context: \.*-U55-128.*
@@ -82,6 +83,8 @@ project:
 
     - component: ARM::CMSIS:DSP&Source
     - component: ARM::CMSIS:NN Lib
+    - component: ARM::CMSIS:OS Tick:SysTick
+    - component: ARM::CMSIS:RTOS2:Keil RTX5&Source
     - component: tensorflow::Data Exchange:Serialization:flatbuffers&tensorflow
     - component: tensorflow::Data Processing:Math:gemmlowp fixed-point&tensorflow
     - component: tensorflow::Data Processing:Math:kissfft&tensorflow
