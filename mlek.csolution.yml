@@ -15,7 +15,7 @@
 #  limitations under the License.
 
 solution:
-  created-for: cmsis-toolbox@2.6.0
+  created-for: cmsis-toolbox@2.7.0
   compiler: AC6
   cdefault: # use default setup of toolchain specific controls.
 
@@ -44,8 +44,9 @@ solution:
 
     - pack: Keil::STM32F7xx_DFP@2.15.1
 
-    - pack: AlifSemiconductor::Ensemble@1.2.1
-    - pack: Keil::Ensemble_AppKit-E7_BSP@1.0.0-dev
+    - pack: AlifSemiconductor::Ensemble@^2.0.0-0
+    - pack: Keil::Ensemble_AppKit-E7_BSP@^1.0.0-0
+    - pack: Keil::Ensemble_DevKit-E7_BSP@^1.0.0-0
 
   build-types:
     - type: Debug
@@ -110,14 +111,12 @@ solution:
       variables:
         - Board-Layer: ../device/Corstone-315/Board-U65.clayer.yml
 
-
     # Arm Corstone-320 targets
     - type: AVH-SSE-320
       board: ARM::SSE-320
       device: ARM::SSE-320-FVP
       variables:
         - Board-Layer: ../device/Corstone-320/Board.clayer.yml
-
 
     - type: AVH-SSE-320-U85
       board: ARM::SSE-320
@@ -138,17 +137,11 @@ solution:
       variables:
         - Board-Layer: ../device/stm32f746-discovery/Board.clayer.yml
 
-    - type: Alif-DevKit-E7-HP-U55
-      board: Alif Semiconductor::DevKit-E7
-      device: AE722F80F55D5LS:M55_HP
-      variables:
-        - Board-Layer: ../device/alif-ensemble/Board-HP.clayer.yml
-
     - type: Alif-DevKit-E7-HE-U55-128
       board: Alif Semiconductor::DevKit-E7
-      device: AE722F80F55D5LS:M55_HE
-      variables:
-        - Board-Layer: ../device/alif-ensemble/Board-HE.clayer.yml
+      device: Alif Semiconductor::AE722F80F55D5LS:M55_HE
+      # variables:
+      #   - Board-Layer: <board_layer>.clayer.yml
 
     - type: Alif-AppKit-E7-HP-U55
       board: Alif Semiconductor::AppKit-E7
@@ -160,12 +153,9 @@ solution:
     # Object detection use case
     - project: ./object-detection/object-detection.cproject.yml
       not-for-context:
-      - +FRDM-K64F
-      - +STM32F746-DISCO
-      - +Alif-DevKit-E7-HE-U55-128
+        - +FRDM-K64F
+        - +STM32F746-DISCO
+        - +Alif-DevKit-E7-HE-U55-128
 
     # Keyword Spotting (KWS) use case
     - project: ./kws/kws.cproject.yml
-      not-for-context:
-        - +Alif-DevKit-E7-HP-U55
-        - +Alif-AppKit-E7-HP-U55

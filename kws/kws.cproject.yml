@@ -20,6 +20,13 @@ project:
       - elf
       - bin
 
+  connections:
+    - connect: Board Layer with Audio
+      consumes:
+        - AVH_AUDIO
+      provides:
+        - CMSIS-RTOS2
+
   groups:
     - group: Keyword Spotting Main
       files:
@@ -47,6 +54,7 @@ project:
       for-context:
         - +STM32F746-DISCO
         - +Alif-DevKit-E7-HE-U55-128
+        - +Alif-AppKit-E7-HP-U55
 
       files:
         - file: src/AudioSource_Live.cpp
