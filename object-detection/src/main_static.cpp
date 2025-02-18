@@ -31,11 +31,11 @@
 #include "DetectorPreProcessing.hpp"  /* Pre Process */
 #include "InputFiles.hpp"             /* Baked-in input (not needed for live data) */
 #include "YoloFastestModel.hpp"       /* Model API */
-#include "main.h"
+
+#include "cmsis_os2.h"                /* ::CMSIS:RTOS2 */
 
 /* Platform dependent files */
-#include "RTE_Components.h"  /* Provides definition for CMSIS_device_header */
-#include CMSIS_device_header /* Gives us IRQ num, base addresses. */
+#include "main.h"
 #include "log_macros.h"      /* Logging macros (optional) */
 
 namespace arm {
@@ -51,11 +51,7 @@ namespace app {
 } /* namespace app */
 } /* namespace arm */
 
-#if defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
-__asm("  .global __ARM_use_no_argv\n");
-#endif
-
-int app_main()
+void app_main_thread(void *arg)
 {
     /* Model object creation and initialisation. */
     arm::app::YoloFastestModel model;
@@ -64,7 +60,7 @@ int app_main()
                     arm::app::object_detection::GetModelPointer(),
                     arm::app::object_detection::GetModelLen())) {
         printf_err("Failed to initialise model\n");
-        return 1;
+        return;
     }
 
     auto initialImgIdx = 0;
@@ -75,10 +71,10 @@ int app_main()
 
     if (!inputTensor->dims) {
         printf_err("Invalid input tensor dims\n");
-        return 1;
+        return;
     } else if (inputTensor->dims->size < 3) {
         printf_err("Input tensor dimension should be >= 3\n");
-        return 1;
+        return;
     }
 
     TfLiteIntArray* inputShape = model.GetInputShape(0);
@@ -112,7 +108,7 @@ int app_main()
     /* Run the pre-processing, inference and post-processing. */
     if (!preProcess.DoPreProcess(currImage, copySz)) {
         printf_err("Pre-processing failed.");
-        return 1;
+        return;
     }
 
     /* Run inference over this image. */
@@ -120,12 +116,12 @@ int app_main()
 
     if (!model.RunInference()) {
         printf_err("Inference failed.");
-        return 2;
+        return;
     }
 
     if (!postProcess.DoPostProcess()) {
         printf_err("Post-processing failed.");
-        return 3;
+        return;
     }
 
     /* Log the results. */
@@ -140,6 +136,17 @@ int app_main()
     }
 
     results.clear();
+}
 
+/* Application initialization */
+int app_main (void) {
+    const osThreadAttr_t attr = {
+        .stack_size = 8192U
+    };
+
+    /* Initialize CMSIS-RTOS2, create application thread and start the kernel */
+    osKernelInitialize();
+    osThreadNew(app_main_thread, NULL, &attr);
+    osKernelStart();
     return 0;
 }

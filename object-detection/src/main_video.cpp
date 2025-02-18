@@ -30,11 +30,11 @@
 #include "DetectorPostProcessing.hpp" /* Post Process */
 #include "DetectorPreProcessing.hpp"  /* Pre Process */
 #include "YoloFastestModel.hpp"       /* Model API */
-#include "main.h"
+
+#include "cmsis_os2.h"                /* ::CMSIS:RTOS2 */
 
 /* Platform dependent files */
-#include "RTE_Components.h"  /* Provides definition for CMSIS_device_header */
-#include CMSIS_device_header /* Gives us IRQ num, base addresses. */
+#include "main.h"
 #include "log_macros.h"      /* Logging macros (optional) */
 #include "video_drv.h"       /* Video Driver API */
 
@@ -76,7 +76,7 @@ static void DrawDetectionBoxes(uint8_t* rgbImage,
                                const uint32_t imageHeight,
                                const std::vector<OdResults>& results);
 
-int app_main()
+void app_main_thread(void *arg)
 {
     /* Model object creation and initialisation. */
     arm::app::YoloFastestModel model;
@@ -85,7 +85,7 @@ int app_main()
                     arm::app::object_detection::GetModelPointer(),
                     arm::app::object_detection::GetModelLen())) {
         printf_err("Failed to initialise model\n");
-        return 1;
+        return;
     }
 
     auto initialImgIdx = 0;
@@ -96,10 +96,10 @@ int app_main()
 
     if (!inputTensor->dims) {
         printf_err("Invalid input tensor dims\n");
-        return 1;
+        return;
     } else if (inputTensor->dims->size < 3) {
         printf_err("Input tensor dimension should be >= 3\n");
-        return 1;
+        return;
     }
 
     TfLiteIntArray* inputShape = model.GetInputShape(0);
@@ -126,41 +126,41 @@ int app_main()
 
     if (sizeof(arm::app::lcdImage) < imgSz) {
         printf_err("RGB buffer is insufficient\n");
-        return 3;
+        return;
     }
 
     /* Initialize Video Interface */
     if (VideoDrv_Initialize(NULL) != VIDEO_DRV_OK) {
         printf_err("Failed to initialise video driver\n");
-        return 1;
+        return;
     }
 
     /* Configure Input Video */
     if (VideoDrv_Configure(VIDEO_DRV_IN0,  IMAGE_WIDTH, IMAGE_HEIGHT, VIDEO_DRV_COLOR_RGB888, 60U) != VIDEO_DRV_OK) {
         printf_err("Failed to configure video input\n");
-        return 1;
+        return;
     }
     /* Configure Output Video */
     if (VideoDrv_Configure(VIDEO_DRV_OUT0, IMAGE_WIDTH, IMAGE_HEIGHT, VIDEO_DRV_COLOR_RGB888, 60U) != VIDEO_DRV_OK) {
         printf_err("Failed to configure video output\n");
-        return 1;
+        return;
     }
 
     /* Set Input Video buffer */
     if (VideoDrv_SetBuf(VIDEO_DRV_IN0,  arm::app::rgbImage, IMAGE_SIZE) != VIDEO_DRV_OK) {
         printf_err("Failed to set buffer for video input\n");
-        return 1;
+        return;
     }
     /* Set Output Video buffer */
     if (VideoDrv_SetBuf(VIDEO_DRV_OUT0, arm::app::lcdImage, IMAGE_SIZE) != VIDEO_DRV_OK) {
         printf_err("Failed to set buffer for video output\n");
-        return 1;
+        return;
     }
 
     /* Start video capture (single frame) */
     if (VideoDrv_StreamStart(VIDEO_DRV_IN0, VIDEO_DRV_MODE_SINGLE) != VIDEO_DRV_OK) {
         printf_err("Failed to start video capture\n");
-        return 1;
+        return;
     }
 
     auto dstPtr = static_cast<uint8_t*>(inputTensor->data.uint8);
@@ -194,13 +194,13 @@ int app_main()
         /* Start video capture (single frame) */
         if (VideoDrv_StreamStart(VIDEO_DRV_IN0, VIDEO_DRV_MODE_SINGLE) != VIDEO_DRV_OK) {
             printf_err("Failed to start video capture\n");
-            return 1;
+            return;
         }
 
         /* Run the pre-processing, inference and post-processing. */
         if (!preProcess.DoPreProcess(lcdFrame, imgSz)) {
             printf_err("Pre-processing failed.\n");
-            return 1;
+            return;
         }
 
         /* Run inference over this image. */
@@ -210,12 +210,12 @@ int app_main()
 
         if (!model.RunInference()) {
             printf_err("Inference failed.\n");
-            return 2;
+            return;
         }
 
         if (!postProcess.DoPostProcess()) {
             printf_err("Post-processing failed.\n");
-            return 3;
+            return;
         }
 
         /* Draw detection boxes to output frame buffer */
@@ -227,8 +227,6 @@ int app_main()
         /* Start video output (single frame) */
         VideoDrv_StreamStart(VIDEO_DRV_OUT0, VIDEO_DRV_MODE_SINGLE);
     }
-
-    return 0;
 }
 
 /**
@@ -289,4 +287,17 @@ static void DrawDetectionBoxes(uint8_t* rgbImage,
                 result.m_w,
                 result.m_h);
     }
+}
+
+/* Application initialization */
+int app_main (void) {
+    const osThreadAttr_t attr = {
+        .stack_size = 8192U
+    };
+
+    /* Initialize CMSIS-RTOS2, create application thread and start the kernel */
+    osKernelInitialize();
+    osThreadNew(app_main_thread, NULL, &attr);
+    osKernelStart();
+    return 0;
 }
