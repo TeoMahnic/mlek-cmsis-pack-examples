@@ -63,22 +63,25 @@ project:
       type: Board
 
   components:
-    - component: tensorflow::Machine Learning:TensorFlow:Kernel&CMSIS-NN
+    - component: Machine Learning:TensorFlow:Kernel&CMSIS-NN
       not-for-context: \.*-U[0-9]{2}.*
-    - component: tensorflow::Machine Learning:TensorFlow:Kernel&Ethos-U
+    - component: Machine Learning:TensorFlow:Kernel&Ethos-U
       for-context: \.*-U[0-9]{2}.*
 
-    - component: ARM::CMSIS:DSP&Source
-    - component: ARM::CMSIS:NN Lib
-    - component: ARM::CMSIS:OS Tick:SysTick
-    - component: ARM::CMSIS:RTOS2:Keil RTX5&Source
-    - component: tensorflow::Data Exchange:Serialization:flatbuffers&tensorflow
-    - component: tensorflow::Data Processing:Math:gemmlowp fixed-point&tensorflow
-    - component: tensorflow::Data Processing:Math:kissfft&tensorflow
-    - component: tensorflow::Data Processing:Math:ruy&tensorflow
-    - component: tensorflow::Machine Learning:TensorFlow:Kernel Utils
-    - component: tensorflow::Machine Learning:TensorFlow:Testing
-    - component: ARM::ML Eval Kit:Common:API
-    - component: ARM::ML Eval Kit:Common:Log
-    - component: ARM::ML Eval Kit:Common:Math
-    - component: ARM::ML Eval Kit:Vision:Object detection
+    - component: CMSIS:DSP&Source
+    - component: CMSIS:NN Lib
+    - component: CMSIS:OS Tick:SysTick
+    - component: CMSIS:RTOS2:Keil RTX5&Source
+
+    - component: Data Exchange:Serialization:flatbuffers&tensorflow
+    - component: Data Processing:Math:gemmlowp fixed-point&tensorflow
+    - component: Data Processing:Math:kissfft&tensorflow
+    - component: Data Processing:Math:ruy&tensorflow
+
+    - component: Machine Learning:TensorFlow:Kernel Utils
+    - component: Machine Learning:TensorFlow:Testing
+
+    - component: ML Eval Kit:Common:API
+    - component: ML Eval Kit:Common:Log
+    - component: ML Eval Kit:Common:Math
+    - component: ML Eval Kit:Vision:Object detection
