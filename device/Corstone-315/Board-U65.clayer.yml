@@ -17,9 +17,6 @@ layer:
     - pack: ARM::CMSIS
     - pack: ARM::SSE_315_BSP@1.0.0
 
-  add-path:
-    - ./vsi
-
   components:
     - component: ARM::CMSIS:CORE
 
@@ -41,11 +38,14 @@ layer:
         - file: ./uart_stdout.h
         - file: ./uart_config.h
         - file: ./retarget.c
-    - group: Video
+
+    - group: Streaming Interface
       files:
-        - file: ./vsi/arm_vsi.h
-        - file: ./vsi/video_drv.c
-        - file: ./vsi/video_drv.h
+        - file: ./vsi/include/arm_vsi.h
+        - file: ./vsi/audio/driver/audio_drv.c
+        - file: ./vsi/audio/include/audio_drv.h
+        - file: ./vsi/video/source/video_drv.c
+        - file: ./vsi/video/include/video_drv.h
 
   linker:
     - script: ./mps4-sse-315.sct
