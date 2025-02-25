@@ -1,5 +1,5 @@
 {
-    // SPDX-FileCopyrightText: Copyright (c) 2022-2023 Arm Limited and/or its
+    // SPDX-FileCopyrightText: Copyright (c) 2022-2025 Arm Limited and/or its
     // affiliates <open-source-office@arm.com>
     // SPDX-License-Identifier: Apache-2.0
 
@@ -24,13 +24,94 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Embedded Debug",
-            "type": "embedded-debug",
+            "name": "AVH-SSE-300",
+            "type": "arm-debugger.fvp",
             "request": "launch",
-            "serialNumber": "${command:device-manager.getSerialNumber}",
-            "program": "${command:cmsis-csolution.getBinaryFile}",
-            "cmsisPack": "${command:device-manager.getDevicePack}",
-            "debugFrom": "main"
+            "program": "${command:arm-debugger.getApplicationFile}",
+            "cdbEntry": "Arm SubSystem FVP::Corstone SSE-300 Ethos-U55 (MPS3)::Bare Metal Debug::Bare Metal Debug::Cortex-M55",
+            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-300/fvp_config.txt",
+            "debugFrom": "Reset_Handler"
+        },
+        {
+            "name": "AVH-SSE-300-U55",
+            "type": "arm-debugger.fvp",
+            "request": "launch",
+            "program": "${command:arm-debugger.getApplicationFile}",
+            "cdbEntry": "Arm SubSystem FVP::Corstone SSE-300 Ethos-U55 (MPS3)::Bare Metal Debug::Bare Metal Debug::Cortex-M55",
+            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-300/fvp_config.txt",
+            "debugFrom": "Reset_Handler"
+        },
+        {
+            "name": "AVH-SSE-300-U65",
+            "type": "arm-debugger.fvp",
+            "request": "launch",
+            "program": "${command:arm-debugger.getApplicationFile}",
+            "cdbEntry": "Arm SubSystem FVP::Corstone SSE-300 Ethos-U55 (MPS3)::Bare Metal Debug::Bare Metal Debug::Cortex-M55",
+            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-300/fvp_config.txt",
+            "debugFrom": "Reset_Handler"
+        },
+        {
+            "name": "AVH-SSE-310",
+            "type": "arm-debugger.fvp",
+            "request": "launch",
+            "program": "${command:arm-debugger.getApplicationFile}",
+            "cdbEntry": "Arm SubSystem FVP::Corstone SSE-310 Ethos-U55 (MPS3)::Bare Metal Debug::Bare Metal Debug::Cortex-M85",
+            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-310/fvp_config.txt",
+            "debugFrom": "Reset_Handler"
+        },
+        {
+            "name": "AVH-SSE-310-U55",
+            "type": "arm-debugger.fvp",
+            "request": "launch",
+            "program": "${command:arm-debugger.getApplicationFile}",
+            "cdbEntry": "Arm SubSystem FVP::Corstone SSE-310 Ethos-U55 (MPS3)::Bare Metal Debug::Bare Metal Debug::Cortex-M85",
+            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-310/fvp_config.txt",
+            "debugFrom": "Reset_Handler"
+        },
+        {
+            "name": "AVH-SSE-310-U65",
+            "type": "arm-debugger.fvp",
+            "request": "launch",
+            "program": "${command:arm-debugger.getApplicationFile}",
+            "cdbEntry": "Arm SubSystem FVP::Corstone SSE-310 Ethos-U55 (MPS3)::Bare Metal Debug::Bare Metal Debug::Cortex-M85",
+            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-310/fvp_config.txt",
+            "debugFrom": "Reset_Handler"
+        },
+        {
+            "name": "AVH-SSE-315",
+            "type": "arm-debugger.fvp",
+            "request": "launch",
+            "program": "${command:arm-debugger.getApplicationFile}",
+            "cdbEntry": "Arm SubSystem FVP::Corstone SSE-315::Bare Metal Debug::Bare Metal Debug::Cortex-M85",
+            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-315/fvp_config.txt",
+            "debugFrom": "Reset_Handler"
+        },
+        {
+            "name": "AVH-SSE-315-U65",
+            "type": "arm-debugger.fvp",
+            "request": "launch",
+            "program": "${command:arm-debugger.getApplicationFile}",
+            "cdbEntry": "Arm SubSystem FVP::Corstone SSE-315::Bare Metal Debug::Bare Metal Debug::Cortex-M85",
+            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-315/fvp_config.txt",
+            "debugFrom": "Reset_Handler"
+        },
+        {
+            "name": "AVH-SSE-320",
+            "type": "arm-debugger.fvp",
+            "request": "launch",
+            "program": "${command:arm-debugger.getApplicationFile}",
+            "cdbEntry": "Arm SubSystem FVP::Corstone SSE-320::Bare Metal Debug::Bare Metal Debug::Cortex-M85",
+            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-320/fvp_config.txt",
+            "debugFrom": "Reset_Handler"
+        },
+        {
+            "name": "AVH-SSE-320-U85",
+            "type": "arm-debugger.fvp",
+            "request": "launch",
+            "program": "${command:arm-debugger.getApplicationFile}",
+            "cdbEntry": "Arm SubSystem FVP::Corstone SSE-320::Bare Metal Debug::Bare Metal Debug::Cortex-M85",
+            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-320/fvp_config.txt",
+            "debugFrom": "Reset_Handler"
         }
     ]
 }
