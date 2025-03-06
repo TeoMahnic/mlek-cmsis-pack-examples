@@ -82,3 +82,15 @@ project:
     - component: ARM::ML Eval Kit:Common:Log
     - component: ARM::ML Eval Kit:Common:Math
     - component: ARM::ML Eval Kit:Vision:Object detection
+
+  executes:
+    - execute: gdb_elf
+      for-context:
+        - +Alif-AppKit-E7-HP-U55
+      # run: arm-none-eabi-objcopy.exe $input(0)$ --update-section M55_HP_ROM=$input(1)$ --remove-section=RW_SRAM0 --remove-section=RW_RAM --remove-section=PADDING $output$
+      run: arm-none-eabi-objcopy.exe $input(0)$ --update-section M55_HP_ROM=$input(1)$ --remove-section=RW_SRAM0 --remove-section=RW_RAM --remove-section=PADDING
+      input:
+        - $elf()$
+        - $bin()$
+      # output:
+      #   - $elf()$

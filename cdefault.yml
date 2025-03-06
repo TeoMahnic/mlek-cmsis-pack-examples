@@ -26,9 +26,11 @@ default:
         - -fno-exceptions
         - -fno-rtti
         - -ffp-mode=full
+        - -gdwarf-5
         - -Wno-license-management
       C:
         - -std=c17
+        - -gdwarf-5
         - -Wno-license-management
       Link:
         - --entry=Reset_Handler

@@ -24,13 +24,44 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Embedded Debug",
-            "type": "embedded-debug",
+            "name": "CMSIS Debugger: pyOCD DevKit-E7",
+            "type": "gdbtarget",
             "request": "launch",
-            "serialNumber": "${command:device-manager.getSerialNumber}",
+            "cwd": "${workspaceFolder}",
             "program": "${command:cmsis-csolution.getBinaryFile}",
-            "cmsisPack": "${command:device-manager.getDevicePack}",
-            "debugFrom": "main"
+            "gdb": "arm-none-eabi-gdb",
+            "initCommands": [
+                "load",
+                "break main"
+            ],
+            "target": {
+                "server": "pyocd",
+                "port": "3333"
+            },
+            "cmsis": {
+                // "cbuildRunFile": "${command:cmsis-csolution.getCbuildRunFile}"
+                "cbuildRunFile": "mlek+Alif-DevKit-E7-HP-U55.cbuild-run.yml"
+            }
+        },
+        {
+            "name": "CMSIS Debugger: pyOCD AppKit-E7",
+            "type": "gdbtarget",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "program": "${command:cmsis-csolution.getBinaryFile}",
+            "gdb": "arm-none-eabi-gdb",
+            "initCommands": [
+                "load",
+                "break main"
+            ],
+            "target": {
+                "server": "pyocd",
+                "port": "3333"
+            },
+            "cmsis": {
+                // "cbuildRunFile": "${command:cmsis-csolution.getCbuildRunFile}"
+                "cbuildRunFile": "mlek+Alif-AppKit-E7-HP-U55.cbuild-run.yml"
+            }
         }
     ]
 }

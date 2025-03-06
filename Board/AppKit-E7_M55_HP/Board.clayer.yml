@@ -1,0 +1,126 @@
+layer:
+  type: Board
+  description: AppKit-E7 board setup using M55_HP
+  for-board: Alif Semiconductor::AppKit-E7
+  for-device: Alif Semiconductor::AE722F80F55D5LS:M55_HP
+  processor:
+    trustzone: secure
+
+  connections:
+    - connect: AppKit-E7 Board
+      provides:
+        - AVH_AUDIO
+        - AVH_VIDEO
+        - CMSIS_USART
+        - CMSIS_VIO
+        - STDIN
+        - STDOUT
+        - STDERR
+        - Heap: 65536
+
+  define:
+    - CMSIS_target_header: \"AppKit-E7.h\"
+    - ETHOSU55
+    - NPU_QCONFIG: 1
+    - NPU_REGIONCFG_0: 1
+    - NPU_REGIONCFG_1: 0
+    - NPU_REGIONCFG_2: 1
+    - AXI_LIMIT0_MEM_TYPE: 3
+    - AXI_LIMIT1_MEM_TYPE: 3
+    - AXI_LIMIT2_MEM_TYPE: 3
+    - AXI_LIMIT3_MEM_TYPE: 3
+
+  packs:
+    - pack: AlifSemiconductor::Ensemble@^2.0.0-0
+    - pack: ARM::CMSIS@^6.0.0
+    - pack: ARM::CMSIS-Compiler@^2.1.0
+    - pack: ARM::CMSIS-Driver@^2.8.0
+    - pack: ARM::ethos-u-core-driver@^1.24.8
+    - pack: Keil::Ensemble_AppKit-E7_BSP@^1.0.0-0
+
+  add-path:
+    - ./ConductorTool
+    - ./interface/audio/include
+    - ./interface/video/include
+
+  misc:
+    - for-compiler: AC6
+      Link:
+        - '--diag_suppress 6312,6314,6329,6848'
+
+  components:
+    - component: BSP:External peripherals:CAMERA Sensor ARX3A0
+    - component: BSP:External peripherals:ILI9806E LCD panel
+
+    # - component: CMSIS Driver:GPIO
+    - component: CMSIS Driver:I2C
+    - component: CMSIS Driver:SAI
+    - component: CMSIS Driver:USART
+
+    - component: Device:Conductor Tool support
+    - component: Device:Startup&C Startup
+
+    - component: Device:SE runtime Services:core&Source
+    - component: Device:SE runtime Services:Initialization Helper&Source
+
+    - component: Device:Retarget IO:STDERR
+    - component: Device:Retarget IO:STDIN
+    - component: Device:Retarget IO:STDOUT
+
+    - component: Device:SOC Peripherals:CDC
+    - component: Device:SOC Peripherals:CPI
+    - component: Device:SOC Peripherals:DMA
+    - component: Device:SOC Peripherals:GPIO
+    - component: Device:SOC Peripherals:MHU
+    - component: Device:SOC Peripherals:MIPI CSI2
+    - component: Device:SOC Peripherals:MIPI DSI
+    - component: Device:SOC Peripherals:MIPI DSI CSI2 DPHY
+    - component: Device:SOC Peripherals:PINCONF
+
+    - component: CMSIS:CORE
+
+    # VIO clashes with Alif GPIO driver hence using defines below
+    - component: CMSIS Driver:VIO:Board&AppKit-E7
+      define:
+        - CMSIS_VIN: 1
+        - CMSIS_VOUT: 1
+
+    - component: CMSIS-Compiler:CORE
+    - component: CMSIS-Compiler:STDERR:Custom
+    - component: CMSIS-Compiler:STDIN:Custom
+    - component: CMSIS-Compiler:STDOUT:Custom
+
+    - component: Machine Learning:NPU Support:Ethos-U Driver&Generic U55
+
+  groups:
+    - group: Board
+      files:
+        - file: ./main.c
+        - file: ./main.h
+        - file: ./AppKit-E7.h
+        - file: ./retarget_stdio.c
+
+    - group: Ethos Interface
+      files:
+        - file: ./ethosu_cb_dcache.c
+        - file: ./ethosu_cb_os_rtos2.c
+
+    - group: Driver
+      files:
+        - file: ./driver/audio/audio_drv.c
+        - file: ./driver/video/video_drv.c
+
+    - group: Interface
+      files:
+        - file: ./interface/audio/include/audio_drv.h
+        - file: ./interface/video/include/video_drv.h
+
+    - group: Video Processing
+      files:
+        - file: ./driver/video/bayer.h
+        - file: ./driver/video/bayer2rgb.c
+        - file: ./driver/video/image_processing.h
+        - file: ./driver/video/image_processing.c
+
+  linker:
+    - script: RTE/Device/AE722F80F55D5LS_M55_HP/M55_HP.sct

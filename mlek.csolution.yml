@@ -137,6 +137,14 @@ solution:
       variables:
         - Board-Layer: ../device/stm32f746-discovery/Board.clayer.yml
 
+    - type: Alif-DevKit-E7-HP-U55
+      board: Alif Semiconductor::DevKit-E7
+      device: Alif Semiconductor::AE722F80F55D5LS:M55_HP
+      variables:
+        - Board-Layer: $SolutionDir()$/Board/DevKit-E7_M55_HP/Board.clayer.yml
+      # variables:
+      #   - Board-Layer: <board_layer>.clayer.yml
+
     - type: Alif-DevKit-E7-HE-U55-128
       board: Alif Semiconductor::DevKit-E7
       device: Alif Semiconductor::AE722F80F55D5LS:M55_HE
@@ -146,6 +154,8 @@ solution:
     - type: Alif-AppKit-E7-HP-U55
       board: Alif Semiconductor::AppKit-E7
       device: Alif Semiconductor::AE722F80F55D5LS:M55_HP
+      variables:
+        - Board-Layer: $SolutionDir()$/Board/AppKit-E7_M55_HP/Board.clayer.yml
       # variables:
       #   - Board-Layer: <board_layer>.clayer.yml
 
@@ -155,6 +165,7 @@ solution:
       not-for-context:
         - +FRDM-K64F
         - +STM32F746-DISCO
+        - +Alif-DevKit-E7-HP-U55
         - +Alif-DevKit-E7-HE-U55-128
 
     # Keyword Spotting (KWS) use case
