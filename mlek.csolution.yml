@@ -25,11 +25,6 @@ solution:
     - pack: ARM::SSE_315_BSP@1.0.0
     - pack: ARM::SSE_320_BSP@1.0.0
 
-    - pack: NXP::FRDM-K64F_BSP@14.0.0
-    - pack: NXP::MK64F12_DFP@14.0.0
-
-    - pack: Keil::STM32F7xx_DFP@2.15.1
-
     - pack: AlifSemiconductor::Ensemble@^2.0.0-0
     - pack: Keil::Ensemble_AppKit-E7_BSP@^1.0.0-0
     - pack: Keil::Ensemble_DevKit-E7_BSP@^1.0.0-0
@@ -109,18 +104,6 @@ solution:
         - Board-Layer: ../device/Corstone-320/Board-U85.clayer.yml
 
     # Other targets
-    - type: FRDM-K64F
-      board: NXP::FRDM-K64F
-      device: MK64FN1M0VLL12
-      variables:
-        - Board-Layer: ../device/frdm-k64f/Board.clayer.yml
-
-    - type: STM32F746-DISCO
-      board: STMicroelectronics::STM32F746G-Discovery
-      device: STM32F746NGHx
-      variables:
-        - Board-Layer: ../device/stm32f746-discovery/Board.clayer.yml
-
     - type: Alif-DevKit-E7-HE-U55-128
       board: Alif Semiconductor::DevKit-E7
       device: Alif Semiconductor::AE722F80F55D5LS:M55_HE
@@ -137,8 +120,6 @@ solution:
     # Object detection use case
     - project: ./object-detection/object-detection.cproject.yml
       not-for-context:
-        - +FRDM-K64F
-        - +STM32F746-DISCO
         - +Alif-DevKit-E7-HE-U55-128
 
     # Keyword Spotting (KWS) use case
