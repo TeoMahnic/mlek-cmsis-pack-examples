@@ -36,12 +36,10 @@ solution:
 
   build-types:
     - type: Debug
-      compiler: AC6
       debug: on
       optimize: debug
 
     - type: Release
-      compiler: AC6
       debug: off
       optimize: speed
 
