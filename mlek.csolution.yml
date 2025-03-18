@@ -30,11 +30,19 @@ solution:
     - pack: Keil::Ensemble_DevKit-E7_BSP@^1.0.0-0
 
   build-types:
-    - type: Debug
+    - type: Debug-Live_Stream
       debug: on
       optimize: debug
 
-    - type: Release
+    - type: Release-Live_Stream
+      debug: off
+      optimize: speed
+
+    - type: Debug-Data_Array
+      debug: on
+      optimize: debug
+
+    - type: Release-Data_Array
       debug: off
       optimize: speed
 

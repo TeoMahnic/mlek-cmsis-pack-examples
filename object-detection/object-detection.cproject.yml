@@ -45,7 +45,9 @@ project:
 
   groups:
     - group: MainStatic
-      not-for-context: \.*-U[0-9]{2}.*
+      for-context:
+        - .Debug-Data_Array
+        - .Release-Data_Array
       files:
         - file: include/InputFiles.hpp
         - file: src/InputFiles.cpp
@@ -53,7 +55,9 @@ project:
         - file: src/main_static.cpp
 
     - group: MainVideo
-      for-context: \.*-U[0-9]{2}.*
+      for-context:
+        - .Debug-Live_Stream
+        - .Release-Live_Stream
       files:
         - file: src/main_video.cpp
 

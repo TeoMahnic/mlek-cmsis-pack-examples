@@ -50,26 +50,16 @@ project:
 
     - group: Wav file based example
       for-context:
-        - +AVH-SSE-300
-        - +AVH-SSE-300-U55
-        - +AVH-SSE-300-U65
-        - +AVH-SSE-310
-        - +AVH-SSE-310-U55
-        - +AVH-SSE-310-U65
-        - +AVH-SSE-315
-        - +AVH-SSE-315-U65
-        - +AVH-SSE-320
-        - +AVH-SSE-320-U85
-
+        - .Debug-Data_Array
+        - .Release-Data_Array
       files:
         - file: src/AudioSource_WAV.cpp
         - file: src/sample_audio.cpp
 
     - group: Live audio based example
       for-context:
-        - +Alif-DevKit-E7-HE-U55-128
-        - +Alif-AppKit-E7-HP-U55
-
+        - .Debug-Live_Stream
+        - .Release-Live_Stream
       files:
         - file: src/AudioSource_Live.cpp
         - file: include/AudioSource.hpp
