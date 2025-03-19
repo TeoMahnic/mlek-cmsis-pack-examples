@@ -43,6 +43,9 @@ project:
       provides:
         - CMSIS-RTOS2
 
+  define:
+    - ACTIVATION_BUF_SZ: 131072
+
   groups:
     - group: Keyword Spotting Main
       files:
@@ -80,13 +83,6 @@ project:
         - file: src/kws_micronet_m.tflite.cpp
           not-for-context: \.*-U[0-9]{2}.*
 
-  define:
-    - ACTIVATION_BUF_SZ: 131072
-
-  layers:
-    - layer: $Board-Layer$
-      type: Board
-
   components:
     - component: Machine Learning:TensorFlow:Kernel&CMSIS-NN
       not-for-context: \.*-U[0-9]{2}.*
@@ -110,3 +106,7 @@ project:
     - component: ML Eval Kit:Common:Log
     - component: ML Eval Kit:Common:Math
     - component: ML Eval Kit:Voice:Keyword spotting
+
+  layers:
+    - layer: $Board-Layer$
+      type: Board
