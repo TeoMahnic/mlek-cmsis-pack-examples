@@ -104,7 +104,7 @@ void app_main_thread(void *arg)
     void *rgbFrame;
     const uint8_t *img_buf;
 
-    while (open_img(img_idx)) {
+    while (open_img_source(img_idx)) {
         results.clear();
 
         img_buf = get_img_array(img_idx);
@@ -147,7 +147,7 @@ void app_main_thread(void *arg)
             printf("\n");
         }
 
-        close_img(img_idx++);
+        close_img_source(img_idx++);
     }
 }
 
