@@ -64,7 +64,7 @@ void audio_capture (void *arg) {
   mono_block = 0;
 
   AudioDrv_Initialize(AudioDrv_Event_Callback);
-  AudioDrv_Configure(AUDIO_DRV_INTERFACE_RX, 1, 16, 16000);
+  AudioDrv_Configure(AUDIO_DRV_INTERFACE_RX, 2, 16, 16000);
   AudioDrv_SetBuf(AUDIO_DRV_INTERFACE_RX, stereoBuffer, STEREO_BLOCK_COUNT, STEREO_BLOCK_SIZE);
 
   /* Start audio receiver */
@@ -168,7 +168,7 @@ static void ApplyGainAndOffset(int16_t *audioData, uint32_t sampleCount, int32_t
     }
 }
 
-bool is_file_available(const uint32_t idx)
+bool open_audio_source(const uint32_t idx)
 {
     uint32_t flags;
 
@@ -191,7 +191,12 @@ bool is_file_available(const uint32_t idx)
     return true;
 }
 
-const char* get_filename(const uint32_t idx)
+void close_audio_source(const uint32_t idx)
+{
+    (void)idx;
+}
+
+const char* get_audio_name(const uint32_t idx)
 {
     return "Live Audio Stream";
 }
@@ -203,6 +208,6 @@ const int16_t* get_audio_array(const uint32_t idx)
 
 uint32_t get_audio_array_size(const uint32_t idx)
 {
-    /* This is actually number of elements in audio array */
+    /* Return number of elements in audio array */
     return MONO_BLOCK_SAMPLES * MONO_BLOCK_COUNT;
 }

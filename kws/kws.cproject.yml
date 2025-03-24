@@ -37,7 +37,7 @@ project:
       - bin
 
   connections:
-    - connect: Board Layer with Audio
+    - connect: Board Layer with Audio interface
       consumes:
         - AVH_AUDIO
       provides:
@@ -46,26 +46,25 @@ project:
   define:
     - ACTIVATION_BUF_SZ: 131072
 
+  add-path:
+    - ./include/
+
   groups:
-    - group: Keyword Spotting Main
+    - group: Application Main
       files:
         - file: src/main_kws.cpp
 
-    - group: Wav file based example
-      for-context:
-        - .Debug-Data_Array
-        - .Release-Data_Array
+    - group: Audio Source
       files:
-        - file: src/AudioSource_WAV.cpp
-        - file: src/sample_audio.cpp
-
-    - group: Live audio based example
-      for-context:
-        - .Debug-Live_Stream
-        - .Release-Live_Stream
-      files:
+        # Audio source implementation using CMSIS audio interface
         - file: src/AudioSource_Live.cpp
-        - file: include/AudioSource.hpp
+          for-context: \.*Live_Stream
+        # Audio source implementation using data array
+        - file: src/AudioSource_WAV.cpp
+          for-context: \.*Data_Array
+        # Audio sample ad data array
+        - file: src/sample_audio.cpp
+          for-context: \.*Data_Array
 
     - group: Use Case
       files:

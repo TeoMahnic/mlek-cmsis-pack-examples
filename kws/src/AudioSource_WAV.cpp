@@ -35,15 +35,20 @@ static const size_t audio_clip_sizes[NUMBER_OF_FILES] = {
     16000,
 };
 
-bool is_file_available(const uint32_t idx)
+bool open_audio_source(const uint32_t idx)
 {
     if(idx < NUMBER_OF_FILES) {
         return true;
     }
     return false;
- }
+}
 
-const char* get_filename(const uint32_t idx)
+void close_audio_source(const uint32_t idx)
+{
+    (void)idx;
+}
+
+const char* get_audio_name(const uint32_t idx)
 {
     if (idx < NUMBER_OF_FILES) {
         return audio_clip_filenames[idx];

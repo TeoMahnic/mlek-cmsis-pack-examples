@@ -21,8 +21,9 @@
 
 #include <cstdint>
 
-bool is_file_available(const uint32_t idx);
-const char* get_file_name(const uint32_t idx);
+bool open_audio_source(const uint32_t idx);
+void close_audio_source(const uint32_t idx);
+const char* get_audio_name(const uint32_t idx);
 const int16_t* get_audio_array(const uint32_t idx);
 uint32_t get_audio_array_size(const uint32_t idx);
 

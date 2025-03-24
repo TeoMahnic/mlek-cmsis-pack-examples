@@ -124,16 +124,16 @@ void app_main_thread(void *arg)
     uint32_t inferenceCount{0};
     std::string lastValidKeywordDetected{};
 
-    while (is_file_available(file_idx)) {
+    while (open_audio_source(file_idx)) {
 
-        debug("Using audio data from %s\n", get_filename(file_idx));
+        debug("Using audio data from %s\n", get_audio_name(file_idx));
 
         /* Creating a sliding window through the whole audio clip. */
         auto audioDataSlider = arm::app::audio::SlidingWindow<const int16_t>(get_audio_array(file_idx),
                                                                              get_audio_array_size(file_idx),
                                                                              preProcess.m_audioDataWindowSize,
                                                                              preProcess.m_audioDataStride);
-        file_idx++;
+        close_audio_source(file_idx++);
 
         /* Reset sliding window position */
         audioDataSlider.Reset();
@@ -165,7 +165,7 @@ void app_main_thread(void *arg)
                 audioDataSlider.Index() * secondsPerSample * preProcess.m_audioDataStride,
                 audioDataSlider.Index(),
                 scoreThreshold));
-        } /* while (audioDataSlider.HasNext()) */
+        }
 
         for (const auto& result : finalResults) {
 
