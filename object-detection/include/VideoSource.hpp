@@ -16,24 +16,19 @@
  * limitations under the License.
  */
 
-#include "InputFiles.hpp"
+#ifndef VIDEO_SOURCE_HPP__
+#define VIDEO_SOURCE_HPP__
 
-static const char* img_filenames[] = {"sample_image.png"};
+#include <cstdint>
 
-static const uint8_t* img_arrays[] = {im0};
+bool open_img_source(const uint32_t idx);
+void close_img_source(const uint32_t idx);
+const char* get_img_name(const uint32_t idx);
+const uint8_t* get_img_array(const uint32_t idx);
+uint32_t get_img_array_size(const uint32_t idx);
+void set_img_object_box(const uint32_t idx, const uint32_t x0,
+                                            const uint32_t y0,
+                                            const uint32_t w,
+                                            const uint32_t h);
 
-const char* get_filename(const uint32_t idx)
-{
-    if (idx < NUMBER_OF_FILES) {
-        return img_filenames[idx];
-    }
-    return nullptr;
-}
-
-const uint8_t* get_img_array(const uint32_t idx)
-{
-    if (idx < NUMBER_OF_FILES) {
-        return img_arrays[idx];
-    }
-    return nullptr;
-}
+#endif /* VIDEO_SOURCE_HPP__ */

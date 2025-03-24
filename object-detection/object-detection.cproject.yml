@@ -37,7 +37,7 @@ project:
       - bin
 
   connections:
-    - connect: Board Layer with Video
+    - connect: Board Layer with Video interface
       consumes:
         - AVH_VIDEO
       provides:
@@ -46,23 +46,25 @@ project:
   define:
     - ACTIVATION_BUF_SZ: 532480
 
-  groups:
-    - group: MainStatic
-      for-context:
-        - .Debug-Data_Array
-        - .Release-Data_Array
-      files:
-        - file: include/InputFiles.hpp
-        - file: src/InputFiles.cpp
-        - file: src/sample_image.cpp
-        - file: src/main_static.cpp
+  add-path:
+    - ./include/
 
-    - group: MainVideo
-      for-context:
-        - .Debug-Live_Stream
-        - .Release-Live_Stream
+  groups:
+    - group: Application Main
       files:
-        - file: src/main_video.cpp
+        - file: src/main_object_detection.cpp
+
+    - group: Image Source
+      files:
+        # Image source implementation using CMSIS video interface
+        - file: src/VideoSource_Live.cpp
+          for-context: \.*Live_Stream
+        # Image source implementation using data array
+        - file: src/VideoSource_File.cpp
+          for-context: \.*Data_Array
+        # Image sample as data array
+        - file: src/sample_image.cpp
+          for-context: \.*Data_Array
 
     - group: Use Case
       files:

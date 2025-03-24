@@ -29,7 +29,7 @@
 #include "DetectionResult.hpp"
 #include "DetectorPostProcessing.hpp" /* Post Process */
 #include "DetectorPreProcessing.hpp"  /* Pre Process */
-#include "InputFiles.hpp"             /* Baked-in input (not needed for live data) */
+#include "VideoSource.hpp"
 #include "YoloFastestModel.hpp"       /* Model API */
 
 #include "cmsis_os2.h"                /* ::CMSIS:RTOS2 */
@@ -96,52 +96,65 @@ void app_main_thread(void *arg)
     arm::app::DetectorPostProcess postProcess =
         arm::app::DetectorPostProcess(outputTensor0, outputTensor1, results, postProcessParams);
 
-    /* Strings for presentation/logging. */
-    std::string str_inf{"Running inference... "};
-
-    const uint8_t* currImage = get_img_array(0);
-
     auto dstPtr = static_cast<uint8_t*>(inputTensor->data.uint8);
-    const size_t copySz =
-        inputTensor->bytes < IMAGE_DATA_SIZE ? inputTensor->bytes : IMAGE_DATA_SIZE;
 
-    /* Run the pre-processing, inference and post-processing. */
-    if (!preProcess.DoPreProcess(currImage, copySz)) {
-        printf_err("Pre-processing failed.");
-        return;
+    uint32_t img_idx = 0;
+    size_t img_sz;
+
+    void *rgbFrame;
+    const uint8_t *img_buf;
+
+    while (open_img(img_idx)) {
+        results.clear();
+
+        img_buf = get_img_array(img_idx);
+        img_sz  = get_img_array_size(img_idx);
+
+        /* Run the pre-processing, inference and post-processing. */
+        if (!preProcess.DoPreProcess(img_buf, img_sz)) {
+            printf_err("Pre-processing failed.\n");
+            return;
+        }
+
+        printf("Image %" PRIu32 ": ", img_idx);
+
+        /* Run inference over this image. */
+        if (!model.RunInference()) {
+            printf_err("Inference failed.\n");
+            return;
+        }
+
+        if (!postProcess.DoPostProcess()) {
+            printf_err("Post-processing failed.\n");
+            return;
+        }
+
+        if (results.empty()) {
+            printf("No object detected\n");
+        }
+        else {
+            printf("Detected objects ");
+            for (const auto& result : results) {
+                /* Set object detection box to the image */
+                set_img_object_box(img_idx, result.m_x0, result.m_y0, result.m_w, result.m_h);
+
+                /* Sent detection coordinates to the console */
+                printf(":: [x=%" PRIu32 ", y=%" PRIu32 ", w=%" PRIu32 ", h=%" PRIu32 "] ", result.m_x0,
+                                                                                           result.m_y0,
+                                                                                           result.m_w,
+                                                                                           result.m_h);
+            }
+            printf("\n");
+        }
+
+        close_img(img_idx++);
     }
-
-    /* Run inference over this image. */
-    info("Running inference on image %" PRIu32 " => %s\n", 0, get_filename(0));
-
-    if (!model.RunInference()) {
-        printf_err("Inference failed.");
-        return;
-    }
-
-    if (!postProcess.DoPostProcess()) {
-        printf_err("Post-processing failed.");
-        return;
-    }
-
-    /* Log the results. */
-    for (uint32_t i = 0; i < results.size(); ++i) {
-        info("Detection at index %" PRIu32 ", at x-coordinate %" PRIu32 ", y-coordinate %" PRIu32
-             ", width %" PRIu32 ", height %" PRIu32 "\n",
-             i,
-             results[i].m_x0,
-             results[i].m_y0,
-             results[i].m_w,
-             results[i].m_h);
-    }
-
-    results.clear();
 }
 
 /* Application initialization */
 int app_main (void) {
     const osThreadAttr_t attr = {
-        .stack_size = 8192U
+        .stack_size = 4096U
     };
 
     /* Initialize CMSIS-RTOS2, create application thread and start the kernel */
