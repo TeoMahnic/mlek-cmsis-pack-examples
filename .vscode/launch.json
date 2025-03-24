@@ -29,7 +29,7 @@
             "request": "launch",
             "program": "${command:arm-debugger.getApplicationFile}",
             "cdbEntry": "Arm SubSystem FVP::Corstone SSE-300 Ethos-U55 (MPS3)::Bare Metal Debug::Bare Metal Debug::Cortex-M55",
-            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-300/fvp_config.txt",
+            "fvpParameters": "\"${workspaceFolder}\"/board/Corstone-300/fvp_config.txt",
             "debugFrom": "Reset_Handler"
         },
         {
@@ -38,7 +38,7 @@
             "request": "launch",
             "program": "${command:arm-debugger.getApplicationFile}",
             "cdbEntry": "Arm SubSystem FVP::Corstone SSE-300 Ethos-U55 (MPS3)::Bare Metal Debug::Bare Metal Debug::Cortex-M55",
-            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-300/fvp_config.txt",
+            "fvpParameters": "\"${workspaceFolder}\"/board/Corstone-300/fvp_config.txt",
             "debugFrom": "Reset_Handler"
         },
         {
@@ -47,7 +47,7 @@
             "request": "launch",
             "program": "${command:arm-debugger.getApplicationFile}",
             "cdbEntry": "Arm SubSystem FVP::Corstone SSE-300 Ethos-U55 (MPS3)::Bare Metal Debug::Bare Metal Debug::Cortex-M55",
-            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-300/fvp_config.txt",
+            "fvpParameters": "\"${workspaceFolder}\"/board/Corstone-300/fvp_config.txt",
             "debugFrom": "Reset_Handler"
         },
         {
@@ -56,7 +56,7 @@
             "request": "launch",
             "program": "${command:arm-debugger.getApplicationFile}",
             "cdbEntry": "Arm SubSystem FVP::Corstone SSE-310 Ethos-U55 (MPS3)::Bare Metal Debug::Bare Metal Debug::Cortex-M85",
-            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-310/fvp_config.txt",
+            "fvpParameters": "\"${workspaceFolder}\"/board/Corstone-310/fvp_config.txt",
             "debugFrom": "Reset_Handler"
         },
         {
@@ -65,7 +65,7 @@
             "request": "launch",
             "program": "${command:arm-debugger.getApplicationFile}",
             "cdbEntry": "Arm SubSystem FVP::Corstone SSE-310 Ethos-U55 (MPS3)::Bare Metal Debug::Bare Metal Debug::Cortex-M85",
-            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-310/fvp_config.txt",
+            "fvpParameters": "\"${workspaceFolder}\"/board/Corstone-310/fvp_config.txt",
             "debugFrom": "Reset_Handler"
         },
         {
@@ -74,7 +74,7 @@
             "request": "launch",
             "program": "${command:arm-debugger.getApplicationFile}",
             "cdbEntry": "Arm SubSystem FVP::Corstone SSE-310 Ethos-U55 (MPS3)::Bare Metal Debug::Bare Metal Debug::Cortex-M85",
-            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-310/fvp_config.txt",
+            "fvpParameters": "\"${workspaceFolder}\"/board/Corstone-310/fvp_config.txt",
             "debugFrom": "Reset_Handler"
         },
         {
@@ -83,7 +83,7 @@
             "request": "launch",
             "program": "${command:arm-debugger.getApplicationFile}",
             "cdbEntry": "Arm SubSystem FVP::Corstone SSE-315::Bare Metal Debug::Bare Metal Debug::Cortex-M85",
-            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-315/fvp_config.txt",
+            "fvpParameters": "\"${workspaceFolder}\"/board/Corstone-315/fvp_config.txt",
             "debugFrom": "Reset_Handler"
         },
         {
@@ -92,7 +92,7 @@
             "request": "launch",
             "program": "${command:arm-debugger.getApplicationFile}",
             "cdbEntry": "Arm SubSystem FVP::Corstone SSE-315::Bare Metal Debug::Bare Metal Debug::Cortex-M85",
-            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-315/fvp_config.txt",
+            "fvpParameters": "\"${workspaceFolder}\"/board/Corstone-315/fvp_config.txt",
             "debugFrom": "Reset_Handler"
         },
         {
@@ -101,7 +101,7 @@
             "request": "launch",
             "program": "${command:arm-debugger.getApplicationFile}",
             "cdbEntry": "Arm SubSystem FVP::Corstone SSE-320::Bare Metal Debug::Bare Metal Debug::Cortex-M85",
-            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-320/fvp_config.txt",
+            "fvpParameters": "\"${workspaceFolder}\"/board/Corstone-320/fvp_config.txt",
             "debugFrom": "Reset_Handler"
         },
         {
@@ -110,7 +110,7 @@
             "request": "launch",
             "program": "${command:arm-debugger.getApplicationFile}",
             "cdbEntry": "Arm SubSystem FVP::Corstone SSE-320::Bare Metal Debug::Bare Metal Debug::Cortex-M85",
-            "fvpParameters": "\"${workspaceFolder}\"/device/Corstone-320/fvp_config.txt",
+            "fvpParameters": "\"${workspaceFolder}\"/board/Corstone-320/fvp_config.txt",
             "debugFrom": "Reset_Handler"
         }
     ]
