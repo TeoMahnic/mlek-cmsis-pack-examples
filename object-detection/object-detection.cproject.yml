@@ -66,26 +66,22 @@ project:
         - file: src/sample_image.cpp
           for-context: \.*Data_Array
 
-    - group: Use Case
+    - group: Object Detection ML models
       files:
-        - file: include/BufAttributes.hpp
-        - file: include/ethosu_mem_config.h
-
-        - file: src/yolo-fastest_192_face_v4.tflite.cpp
-          not-for-context: \.*-U[0-9]{2}.*
+        # Model for devices with Ethos-U55 (256 macs)
         - file: src/yolo-fastest_192_face_v4_vela_H256.tflite.cpp
           for-context: \.*-U55(-256)?(?!-\d{2,3}).*
+        # Model for devices with Ethos-U65 (256 macs)
         - file: src/yolo-fastest_192_face_v4_vela_Y256.tflite.cpp
           for-context: \.*-U65(-256)?(?!-\d{2,3}).*
+        # Model for devices with Ethos-U85 (256 macs)
         - file: src/yolo-fastest_192_face_v4_vela_Z256.tflite.cpp
           for-context: \.*-U85(-256)?(?!-\d{2,3}).*
+        # Model for devices without Ethos-U
+        - file: src/yolo-fastest_192_face_v4.tflite.cpp
+          not-for-context: \.*-U[0-9]{2}.*
 
   components:
-    - component: Machine Learning:TensorFlow:Kernel&CMSIS-NN
-      not-for-context: \.*-U[0-9]{2}.*
-    - component: Machine Learning:TensorFlow:Kernel&Ethos-U
-      for-context: \.*-U[0-9]{2}.*
-
     - component: CMSIS:DSP&Source
     - component: CMSIS:NN Lib
     - component: CMSIS:OS Tick:SysTick
@@ -95,6 +91,13 @@ project:
     - component: Data Processing:Math:gemmlowp fixed-point&tensorflow
     - component: Data Processing:Math:kissfft&tensorflow
     - component: Data Processing:Math:ruy&tensorflow
+
+    # TensorFlow Kernel variant for devices without Ethos-U
+    - component: Machine Learning:TensorFlow:Kernel&CMSIS-NN
+      not-for-context: \.*-U[0-9]{2}.*
+    # TensorFlow Kernel variant for devices with Ethos-U
+    - component: Machine Learning:TensorFlow:Kernel&Ethos-U
+      for-context: \.*-U[0-9]{2}.*
 
     - component: Machine Learning:TensorFlow:Kernel Utils
     - component: Machine Learning:TensorFlow:Testing
