@@ -19,13 +19,14 @@
 #include <algorithm>
 #include <cstdint>
 
-#include "AudioSource.hpp" 
-#include "audio_drv.h"
+#include "AudioSource.hpp"
+#include "cmsis_vstream.h"
 #include "cmsis_os2.h"
 
-#include "arm_math.h"
 #include "log_macros.h"
+#include "arm_math.h"
 
+/* Define stereo (audio in) and mono (audio for inference) buffers */
 #define STEREO_BLOCK_COUNT   (2)
 #define STEREO_BLOCK_SAMPLES (16000)
 #define STEREO_BLOCK_SIZE    (STEREO_BLOCK_SAMPLES * 2)
@@ -36,9 +37,13 @@
 int16_t stereoBuffer[STEREO_BLOCK_SAMPLES * STEREO_BLOCK_COUNT];
 int16_t monoBuffer[MONO_BLOCK_SAMPLES * MONO_BLOCK_COUNT];
 
-uint32_t stereo_block;
 uint32_t mono_block;
 
+/* Reference to the underlying CMSIS vStream driver */
+extern vStreamDriver_t          Driver_vStreamAudioIn;
+#define vStream_AudioIn       (&Driver_vStreamAudioIn)
+
+/* Audio processing functions */
 static int32_t CalculateOffset(int16_t *audioData, uint32_t sampleCount);
 static int32_t CalculateScale(int16_t *audioData, uint32_t sampleCount);
 static void ApplyGainAndOffset(int16_t *audioData, uint32_t sampleCount, int32_t audioOffset, int32_t audioScale);
@@ -57,47 +62,52 @@ void AudioDrv_Event_Callback (uint32_t event) {
   Process stereo buffer audio data and convert it to fit into mono buffer
 */
 void audio_capture (void *arg) {
+  int16_t *buf;
   int32_t audioGain   = 0;
   int32_t audioOffset = 0;
 
-  stereo_block = 0;
   mono_block = 0;
 
-  AudioDrv_Initialize(AudioDrv_Event_Callback);
-  AudioDrv_Configure(AUDIO_DRV_INTERFACE_RX, 2, 16, 16000);
-  AudioDrv_SetBuf(AUDIO_DRV_INTERFACE_RX, stereoBuffer, STEREO_BLOCK_COUNT, STEREO_BLOCK_SIZE);
+  /* Initialize audio in stream and set the receive buffer */
+  vStream_AudioIn->Initialize(AudioDrv_Event_Callback);
+  vStream_AudioIn->SetBuf(stereoBuffer, STEREO_BLOCK_COUNT * STEREO_BLOCK_SIZE, STEREO_BLOCK_SIZE);
 
   /* Start audio receiver */
-  AudioDrv_Control(AUDIO_DRV_CONTROL_RX_ENABLE);
+  vStream_AudioIn->Start(VSTREAM_MODE_CONTINUOUS);
 
   while(1) {
       /* Wait for flag from audio callback */
       osThreadFlagsWait(0x0001, osFlagsWaitAny, osWaitForever);
 
       /* Process block of currently received audio samples */
+      buf = (int16_t *)vStream_AudioIn->GetBlock();
 
       /* Recalculate offset and gain */
-      audioOffset = CalculateOffset(&stereoBuffer[stereo_block * STEREO_BLOCK_SAMPLES], STEREO_BLOCK_SAMPLES);
-      audioGain = CalculateScale(&stereoBuffer[stereo_block * STEREO_BLOCK_SAMPLES], STEREO_BLOCK_SAMPLES);
+      audioOffset = CalculateOffset(buf, STEREO_BLOCK_SAMPLES);
+      audioGain = CalculateScale(buf, STEREO_BLOCK_SAMPLES);
 
       /* Apply offset and scaling factor (gain) to each audio sample */
-      ApplyGainAndOffset(&stereoBuffer[stereo_block * STEREO_BLOCK_SAMPLES], STEREO_BLOCK_SAMPLES, audioOffset, audioGain);
+      ApplyGainAndOffset(buf, STEREO_BLOCK_SAMPLES, audioOffset, audioGain);
 
       /* Move mono buffer data to the beginning (shift by one block) */
       memcpy(monoBuffer, &monoBuffer[MONO_BLOCK_SAMPLES], MONO_BLOCK_SAMPLES * (MONO_BLOCK_COUNT - 1) * 2);
 
       /* Populate the last block of the mono buffer from the freshly captured stereo audio */
-      ConvertToMono(&monoBuffer[MONO_BLOCK_SAMPLES * (MONO_BLOCK_COUNT - 1)], &stereoBuffer[STEREO_BLOCK_SAMPLES * stereo_block], MONO_BLOCK_SAMPLES);
+      ConvertToMono(&monoBuffer[MONO_BLOCK_SAMPLES * (MONO_BLOCK_COUNT - 1)], buf, MONO_BLOCK_SAMPLES);
 
-      /* Set next block to process */
-      stereo_block = (stereo_block + 1) % STEREO_BLOCK_COUNT;
+      /* Release buffer block to vStream driver */
+      vStream_AudioIn->ReleaseBlock();
 
       /* Mono buffer is ready, start processing it */
       osThreadFlagsSet(tid_app_main, 0x0001);
   }
 }
 
-
+/*
+  Convert stereo audio data to mono.
+  The function takes stereo audio data (2 channels) and converts it to mono by
+  averaging the two channels.
+*/
 static void ConvertToMono(int16_t *monoData, int16_t *stereoData, uint32_t n_samples)
 {
     int16_t* pIn  = stereoData;
@@ -110,6 +120,11 @@ static void ConvertToMono(int16_t *monoData, int16_t *stereoData, uint32_t n_sam
     }
 }
 
+/*
+  Calculate offset correction value.
+  Offset determines how much the audio signal should be shifted up or down to
+  center it around zero.
+*/
 static int32_t CalculateOffset(int16_t *audioData, uint32_t sampleCount)
 {
     int16_t audioMean = 0;
@@ -117,6 +132,11 @@ static int32_t CalculateOffset(int16_t *audioData, uint32_t sampleCount)
     return static_cast<int32_t>(0 - audioMean);
 }
 
+/*
+  Calculate a scaling factor for audio normalization.
+  The scaling factor is used to normalize or amplify the audio signal to a
+  desired range (avoiding over-amplifying noise or silence).
+*/
 static int32_t CalculateScale(int16_t *audioData, uint32_t sampleCount)
 {
     /* Define the desired signal span to scale our input signal to. It can be based on
@@ -146,6 +166,11 @@ static int32_t CalculateScale(int16_t *audioData, uint32_t sampleCount)
     return audioScale;
 }
 
+/*
+  Apply gain and offset to the audio data.
+  Applies linear transformation with gain and offset and ensures that the values
+  stay within the range of int16_t.
+*/
 static void ApplyGainAndOffset(int16_t *audioData, uint32_t sampleCount, int32_t audioOffset, int32_t audioScale)
 {
     debug("Scale: %d; Offset: %d\n", audioScale, audioOffset);
@@ -193,16 +218,19 @@ bool open_audio_source(const uint32_t idx)
 
 void close_audio_source(const uint32_t idx)
 {
+    /* Unused, audio source is always the same */
     (void)idx;
 }
 
 const char* get_audio_name(const uint32_t idx)
 {
+    /* This is audio from hardware audio stream */
     return "Live Audio Stream";
 }
 
 const int16_t* get_audio_array(const uint32_t idx)
 {
+    /* Mono buffer is the audio source array */
     return monoBuffer;
 }
 

@@ -19,8 +19,8 @@
 #include <cstdint>
 #include <cstring>
 
-#include "VideoSource.hpp" 
-#include "video_drv.h"
+#include "VideoSource.hpp"
+#include "cmsis_vstream.h"
 #include "cmsis_os2.h"
 
 #include "log_macros.h"
@@ -28,6 +28,13 @@
 #define IMAGE_WIDTH     192
 #define IMAGE_HEIGHT    192
 #define IMAGE_SIZE      (IMAGE_WIDTH * IMAGE_HEIGHT * 3)
+
+/* Reference to the underlying CMSIS vStream drivers */
+extern vStreamDriver_t          Driver_vStreamVideoIn;
+#define vStream_VideoIn       (&Driver_vStreamVideoIn)
+
+extern vStreamDriver_t          Driver_vStreamVideoOut;
+#define vStream_VideoOut      (&Driver_vStreamVideoOut)
 
 /* Draws a box with the specified coordinates */
 static void DrawBox(uint8_t *imageData, const uint32_t x0, const uint32_t y0, const uint32_t w, const uint32_t h);
@@ -41,79 +48,78 @@ static uint8_t outImage[IMAGE_SIZE];
 osThreadId_t tid_app_main = NULL;
 osThreadId_t tid_video_capture = NULL;
 
-void VideoDrv_Event_Callback (uint32_t channel, uint32_t event) {
-    (void)channel;
+/* Video In Stream Event Callback */
+void VideoIn_Event_Callback (uint32_t event) {
     (void)event;
 
     osThreadFlagsSet(tid_video_capture, 0x0001);
+}
+
+/* Video Out Stream Event Callback */
+void VideoOut_Event_Callback (uint32_t event) {
+    (void)event;
 }
 
 /**
     Capture video frames and output them to the display
 */
 void video_capture (void *arg) {
-    VideoDrv_Status_t status;
+    vStreamStatus_t status;
+    void *inFrame;
+    void *outFrame;
 
     /* Initialize Video Interface */
-    if (VideoDrv_Initialize(NULL) != VIDEO_DRV_OK) {
-        printf_err("Failed to initialise video driver\n");
+    if (vStream_VideoIn->Initialize(VideoIn_Event_Callback) != VSTREAM_OK) {
+        printf_err("Failed to initialise video input driver\n");
         return;
     }
-
-    /* Configure Input Video */
-    if (VideoDrv_Configure(VIDEO_DRV_IN0,  IMAGE_WIDTH, IMAGE_HEIGHT, VIDEO_DRV_COLOR_RGB888, 60U) != VIDEO_DRV_OK) {
-        printf_err("Failed to configure video input\n");
-        return;
-    }
-    /* Configure Output Video */
-    if (VideoDrv_Configure(VIDEO_DRV_OUT0, IMAGE_WIDTH, IMAGE_HEIGHT, VIDEO_DRV_COLOR_RGB888, 60U) != VIDEO_DRV_OK) {
-        printf_err("Failed to configure video output\n");
+    if (vStream_VideoOut->Initialize(VideoOut_Event_Callback) != VSTREAM_OK) {
+        printf_err("Failed to initialise video output driver\n");
         return;
     }
 
     /* Set Input Video buffer */
-    if (VideoDrv_SetBuf(VIDEO_DRV_IN0, inImage, IMAGE_SIZE) != VIDEO_DRV_OK) {
+    if (vStream_VideoIn->SetBuf(inImage, sizeof(inImage), IMAGE_SIZE) != VSTREAM_OK) {
         printf_err("Failed to set buffer for video input\n");
         return;
     }
     /* Set Output Video buffer */
-    if (VideoDrv_SetBuf(VIDEO_DRV_OUT0, outImage, IMAGE_SIZE) != VIDEO_DRV_OK) {
+    if (vStream_VideoOut->SetBuf(outImage, sizeof(outImage), IMAGE_SIZE) != VSTREAM_OK) {
         printf_err("Failed to set buffer for video output\n");
         return;
     }
 
     /* Start video capture (single frame) */
-    if (VideoDrv_StreamStart(VIDEO_DRV_IN0, VIDEO_DRV_MODE_SINGLE) != VIDEO_DRV_OK) {
+    if (vStream_VideoIn->Start(VSTREAM_MODE_SINGLE) != VSTREAM_OK) {
         printf_err("Failed to start video capture\n");
         return;
     }
-
-    void *inFrame;
-    void *outFrame;
 
     while(1) {
         /* Wait for flag from video callback */
         osThreadFlagsWait(0x0001, osFlagsWaitAny, osWaitForever);
 
         /* Get input video frame buffer */
-        inFrame = VideoDrv_GetFrameBuf(VIDEO_DRV_IN0);
+        inFrame = vStream_VideoIn->GetBlock();
 
         /* Wait for video output frame to be released */
         do {
-            status = VideoDrv_GetStatus(VIDEO_DRV_OUT0);
-        } while (status.buf_full != 0U);
+            status = vStream_VideoOut->GetStatus();
+        } while (status.active == 1U);
 
         /* Get output video frame buffer */
-        outFrame = VideoDrv_GetFrameBuf(VIDEO_DRV_OUT0);
+        outFrame = vStream_VideoOut->GetBlock();
 
         /* Copy image frame */
         memcpy(outFrame, inFrame, IMAGE_SIZE);
 
         /* Release input frame */
-        VideoDrv_ReleaseFrame(VIDEO_DRV_IN0);
+        if (vStream_VideoIn->ReleaseBlock() != VSTREAM_OK) {
+            printf_err("Failed to release video input frame\n");
+        }
 
         /* Start video capture (single frame) */
-        if (VideoDrv_StreamStart(VIDEO_DRV_IN0, VIDEO_DRV_MODE_SINGLE) != VIDEO_DRV_OK) {
+        if (vStream_VideoIn->Start(VSTREAM_MODE_SINGLE) != VSTREAM_OK) {
             printf_err("Failed to start video capture\n");
             return;
         }
@@ -127,7 +133,7 @@ bool open_img_source(const uint32_t idx)
 {
     osThreadAttr_t const attr = {NULL, 0, NULL, 0, NULL, 0, osPriorityHigh, 0, 0};
     uint32_t flags;
-    VideoDrv_Status_t status;
+    vStreamStatus_t status;
 
     if (tid_video_capture == NULL) {
         /* Get application thread ID */
@@ -137,16 +143,14 @@ bool open_img_source(const uint32_t idx)
         tid_video_capture = osThreadNew(video_capture, NULL, &attr);
     }
 
-    // #if POOLING
     /* Wait for video input frame */
     do {
-        status = VideoDrv_GetStatus(VIDEO_DRV_IN0);
-    } while (status.buf_empty != 0U);
+        status = vStream_VideoIn->GetStatus();
+    } while (status.active == 1U);
 
-    if (status.buf_empty == 0U) {
+    if (status.active == 0U) {
         osThreadFlagsSet(tid_video_capture, 0x0001);
     }
-    // #endif
 
     /* Wait for flag from video capture thread (2 sec timeout) */
     flags = osThreadFlagsWait(0x0001, osFlagsWaitAny, 2000);
@@ -162,10 +166,14 @@ bool open_img_source(const uint32_t idx)
 void close_img_source(const uint32_t idx)
 {
     /* Release output frame */
-    VideoDrv_ReleaseFrame(VIDEO_DRV_OUT0);
+    if (vStream_VideoOut->ReleaseBlock() != VSTREAM_OK) {
+        printf_err("Failed to release video output frame\n");
+    }
 
     /* Start video output (single frame) */
-    VideoDrv_StreamStart(VIDEO_DRV_OUT0, VIDEO_DRV_MODE_SINGLE);
+    if (vStream_VideoOut->Start(VSTREAM_MODE_SINGLE) != VSTREAM_OK) {
+        printf_err("Failed to start video output\n");
+    }
 }
 
 const char* get_filename(const uint32_t idx)
