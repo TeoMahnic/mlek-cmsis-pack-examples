@@ -39,7 +39,7 @@ project:
   connections:
     - connect: Board Layer with Audio interface
       consumes:
-        - AVH_AUDIO
+        - CMSIS_VSTREAM_AUDIO_IN
       provides:
         - CMSIS-RTOS2
 

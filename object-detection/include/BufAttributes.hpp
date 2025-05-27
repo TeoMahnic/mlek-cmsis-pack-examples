@@ -19,59 +19,72 @@
 #ifndef BUF_ATTRIBUTES_HPP
 #define BUF_ATTRIBUTES_HPP
 
-#if defined(ETHOSU55) || defined(ETHOSU65) || defined(ETHOSU85)
-#define ARM_NPU
-#endif /* defined(ETHOSU55) || defined(ETHOSU65) || defined(ETHOSU85) */
+#include "AppConfiguration.hpp"   /* Application configuration  */
+#include "VideoConfiguration.hpp" /* Video configuration        */
 
-#if defined(ARM_NPU)
-/* When Arm NPU is defined, we use the config set by NPU mem parameters */
-#include "ethosu_mem_config.h"
-#define BYTE_ALIGNMENT ETHOS_U_MEM_BYTE_ALIGNMENT
-#else /* defined(ARM_NPU) */
-/* otherwise, we use the default ones here. */
-#define ACTIVATION_BUF_SECTION      section(".bss.NoInit.activation_buf_sram")
-#define ACTIVATION_BUF_SECTION_NAME ("SRAM")
-#define BYTE_ALIGNMENT              16
-#endif /* defined(ARM_NPU) */
+// RGB Image Buffer Section Name
+// Define the name of the RGB image buffer section
+// Default: ".bss.rgb_image_buf"
+#ifndef RGB_IMAGE_BUF_SECTION
+#define RGB_IMAGE_BUF_SECTION       ".bss.rgb_image_buf"
+#endif
+// RGB Image Buffer Alignment
+// Define the RGB image buffer alignment in bytes
+// Default: 4
+#ifndef RGB_IMAGE_BUF_ALIGNMENT
+#define RGB_IMAGE_BUF_ALIGNMENT     4
+#endif
 
-#ifdef __has_attribute
-#define HAVE_ATTRIBUTE(x) __has_attribute(x)
-#else /* __has_attribute */
-#define HAVE_ATTRIBUTE(x) 0
-#endif /* __has_attribute */
 
-#if HAVE_ATTRIBUTE(aligned) || (defined(__GNUC__) && !defined(__clang__))
+// ML Image Width
+// Define the width of the image to be used for ML inference.
+// Default: 192
+#ifndef ML_IMAGE_WIDTH
+#define ML_IMAGE_WIDTH              192
+#endif
+// ML Image Height
+// Define the height of the image to be used for ML inference.
+// Default: 192
+#ifndef ML_IMAGE_HEIGHT
+#define ML_IMAGE_HEIGHT             192
+#endif
+// ML Image Buffer Section Name
+// Define the name of the section for the ML image buffer
+// Default: ".bss.ml_image_buf"
+#ifndef ML_IMAGE_BUF_SECTION
+#define ML_IMAGE_BUF_SECTION        ".bss.ml_image_buf"
+#endif
+// ML Image Buffer Alignment
+// Define the alignment in bytes for the ML image buffer
+// Default: 4
+#ifndef ML_IMAGE_BUF_ALIGNMENT
+#define ML_IMAGE_BUF_ALIGNMENT      4
+#endif
 
-/* We want all buffers/sections to be aligned to 16 byte.  */
-#define ALIGNMENT_REQ aligned(BYTE_ALIGNMENT)
+/* Attributes applied to the activation buffer object */
+#define ACTIVATION_BUF_ATTRIBUTE \
+  __attribute__((section(ACTIVATION_BUF_SECTION), aligned(ACTIVATION_BUF_ALIGNMENT)))
 
-#define MODEL_SECTION section("nn_model")
+/* Attributes applied to the ML image buffer object */
+#define NN_MODEL_BUF_ATTRIBUTE \
+  __attribute__((section(NN_MODEL_BUF_SECTION), aligned(NN_MODEL_BUF_ALIGNMENT)))
 
-/* Label section name */
-#define LABEL_SECTION section("labels")
+#define MODEL_TFLITE_ATTRIBUTE  NN_MODEL_BUF_ATTRIBUTE
 
-#ifndef ACTIVATION_BUF_SZ
-#warning "ACTIVATION_BUF_SZ needs to be defined. Using default value"
-#define ACTIVATION_BUF_SZ 0x00200000
-#endif /* ACTIVATION_BUF_SZ */
+/* Attributes applied to the camera frame buffer object */
+#define CAMERA_FRAME_BUF_ATTRIBUTE \
+  __attribute__((section(CAMERA_FRAME_BUF_SECTION), aligned(CAMERA_FRAME_BUF_ALIGNMENT)))
 
-/* IFM section name. */
-#define IFM_BUF_SECTION section("ifm")
+/* Attributes applied to the display frame buffer object */
+#define DISPLAY_FRAME_BUF_ATTRIBUTE \
+  __attribute__((section(DISPLAY_FRAME_BUF_SECTION), aligned(DISPLAY_FRAME_BUF_ALIGNMENT)))
 
-/* Form the attributes, alignment is mandatory. */
-#define MAKE_ATTRIBUTE(x)        __attribute__((ALIGNMENT_REQ, x))
-#define MODEL_TFLITE_ATTRIBUTE   MAKE_ATTRIBUTE(MODEL_SECTION)
-#define ACTIVATION_BUF_ATTRIBUTE MAKE_ATTRIBUTE(ACTIVATION_BUF_SECTION)
-#define IFM_BUF_ATTRIBUTE        MAKE_ATTRIBUTE(IFM_BUF_SECTION)
-#define LABELS_ATTRIBUTE         MAKE_ATTRIBUTE(LABEL_SECTION)
+/* Attributes applied to the RGB image buffer object */
+#define RGB_IMAGE_BUF_ATTRIBUTE \
+  __attribute__((section(RGB_IMAGE_BUF_SECTION), aligned(RGB_IMAGE_BUF_ALIGNMENT)))
 
-#else /* HAVE_ATTRIBUTE(aligned) || (defined(__GNUC__) && !defined(__clang__)) */
-
-#define MODEL_TFLITE_ATTRIBUTE
-#define ACTIVATION_BUF_ATTRIBUTE
-#define IFM_BUF_ATTRIBUTE
-#define LABELS_ATTRIBUTE
-
-#endif /* HAVE_ATTRIBUTE(aligned) || (defined(__GNUC__) && !defined(__clang__)) */
+/* Attributes applied to the ML image buffer object */
+#define ML_IMAGE_BUF_ATTRIBUTE \
+  __attribute__((section(ML_IMAGE_BUF_SECTION), aligned(ML_IMAGE_BUF_ALIGNMENT)))
 
 #endif /* BUF_ATTRIBUTES_HPP */
