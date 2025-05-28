@@ -339,17 +339,15 @@ and copied into the project.
 ## Add Alif Ensemble AI/ML AppKit Board Target
 
 To add Alif Ensemble Appkit-E7 board to the target-types list first open mlek.csolution.yml and
-add relevant packs:
+add relevant pack:
 
 ```yml
 solution:
   packs:
     - pack: AlifSemiconductor::Ensemble@^2.0.0-0
-    - pack: Keil::Ensemble_AppKit-E7_BSP@^1.0.0-0
 ```
 
-Listed BSP pack has registered board layer with pre-configured audio and video interface while
-device description and relevant drivers are provided by the Ensemble DFP.
+Listed pack contains device description, relevant drivers and has registered board layer with pre-configured audio and video interface.
 
 What is left is to add target type:
 
@@ -357,7 +355,7 @@ What is left is to add target type:
 solution:
   target-types:
     - type: Alif-AppKit-E7-HP-U55
-      board: Alif Semiconductor::AppKit-E7
+      board: Alif Semiconductor::AppKit-E7-AIML
       device: Alif Semiconductor::AE722F80F55D5LS:M55_HP
 ```
 
