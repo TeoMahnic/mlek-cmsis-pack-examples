@@ -30,7 +30,7 @@
 
 /* Define input image bit depth */
 #ifndef IMAGE_BIT_DEPTH
-#define IMAGE_BIT_DEPTH 24  
+#define IMAGE_BIT_DEPTH         24
 #endif
 
 /* Define number of bytes per pixel */
@@ -42,13 +42,13 @@
 
 /* Define camera RAW frame size */
 #if (CAMERA_FRAME_TYPE == CAMERA_FRAME_TYPE_RAW)
-#define CAMERA_FRAME_SIZE      (CAMERA_FRAME_HEIGHT * CAMERA_FRAME_HEIGHT)
+#define CAMERA_FRAME_SIZE      (CAMERA_FRAME_WIDTH * CAMERA_FRAME_HEIGHT)
 #else
-#define CAMERA_FRAME_SIZE      (CAMERA_FRAME_HEIGHT * CAMERA_FRAME_WIDTH * IMAGE_COLOR_BYTES)
+#define CAMERA_FRAME_SIZE      (CAMERA_FRAME_WIDTH * CAMERA_FRAME_HEIGHT * IMAGE_COLOR_BYTES)
 #endif
 
 /* Define RGB image size */
-#define RGB_IMAGE_SIZE         (CAMERA_FRAME_HEIGHT * CAMERA_FRAME_HEIGHT * IMAGE_COLOR_BYTES)
+#define RGB_IMAGE_SIZE         (CAMERA_FRAME_WIDTH * CAMERA_FRAME_HEIGHT * IMAGE_COLOR_BYTES)
 
 /* Define ML image size */
 #define ML_IMAGE_SIZE          (ML_IMAGE_WIDTH * ML_IMAGE_HEIGHT * IMAGE_COLOR_BYTES)
