@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <cstring>
 
+#include "VideoConfiguration.hpp"
 #include "VideoSource.hpp"
 #include "BufAttributes.hpp"
 
@@ -28,58 +29,29 @@
 
 #include "log_macros.h"
 
-/* Define input image bit depth */
-#ifndef IMAGE_BIT_DEPTH
-#define IMAGE_BIT_DEPTH         24
-#endif
 
-/* Define number of bytes per pixel */
-#define IMAGE_COLOR_BYTES      (IMAGE_BIT_DEPTH / 8U)
-
-/* Frame type */
-#define CAMERA_FRAME_TYPE_RAW   0U
-#define CAMERA_FRAME_TYPE_RGB   1U
-
-/* Define camera RAW frame size */
-#if (CAMERA_FRAME_TYPE == CAMERA_FRAME_TYPE_RAW)
-#define CAMERA_FRAME_SIZE      (CAMERA_FRAME_WIDTH * CAMERA_FRAME_HEIGHT)
-#else
-#define CAMERA_FRAME_SIZE      (CAMERA_FRAME_WIDTH * CAMERA_FRAME_HEIGHT * IMAGE_COLOR_BYTES)
-#endif
-
-/* Define RGB image size */
-#define RGB_IMAGE_SIZE         (CAMERA_FRAME_WIDTH * CAMERA_FRAME_HEIGHT * IMAGE_COLOR_BYTES)
-
-/* Define ML image size */
-#define ML_IMAGE_SIZE          (ML_IMAGE_WIDTH * ML_IMAGE_HEIGHT * IMAGE_COLOR_BYTES)
-
-/* Define display image size */
-#define DISPLAY_IMAGE_SIZE     (DISPLAY_FRAME_WIDTH * DISPLAY_FRAME_HEIGHT * IMAGE_COLOR_BYTES)
-
-
-/* Reference to the underlying CMSIS vStream drivers */
+/* Reference to the underlying CMSIS vStream VideoIn driver */
 extern vStreamDriver_t          Driver_vStreamVideoIn;
 #define vStream_VideoIn       (&Driver_vStreamVideoIn)
 
+/* Reference to the underlying CMSIS vStream VideoOut driver */
 extern vStreamDriver_t          Driver_vStreamVideoOut;
 #define vStream_VideoOut      (&Driver_vStreamVideoOut)
 
-/* Draws a box with the specified coordinates */
-static void DrawBox(uint8_t *imageData, const uint32_t x0, const uint32_t y0, const uint32_t w, const uint32_t h);
-
-/* Camera frame buffer */
+/* Camera frame buffer (RAW8 or RGB565) */
 static uint8_t CAM_Frame[CAMERA_FRAME_SIZE] CAMERA_FRAME_BUF_ATTRIBUTE;
 
-#if (CAMERA_FRAME_TYPE == CAMERA_FRAME_TYPE_RAW)
-/* RGB image buffer */
+/* RGB image buffer (RGB888) */
 static uint8_t RGB_Image[RGB_IMAGE_SIZE] RGB_IMAGE_BUF_ATTRIBUTE;
-#endif
 
-/* ML image buffer */
+/* ML image buffer (RGB888) */
 static uint8_t ML_Image[ML_IMAGE_SIZE] ML_IMAGE_BUF_ATTRIBUTE;
 
-/* Display frame buffer */
+/* Display frame buffer (RGB888) */
 static uint8_t LCD_Frame[DISPLAY_IMAGE_SIZE] DISPLAY_FRAME_BUF_ATTRIBUTE;
+
+static void DrawBox(uint8_t *imageData, const uint32_t x0, const uint32_t y0, const uint32_t w, const uint32_t h);
+static void convert_frame_to_rgb(uint8_t *inFrame);
 
 osThreadId_t tid_app_main = NULL;
 
@@ -148,30 +120,23 @@ bool open_img_source(const uint32_t idx)
         return false;
     }
 
-    #if (CAMERA_FRAME_TYPE == CAMERA_FRAME_TYPE_RAW)
-        /* Perform debayering */
-        image_debayer(inFrame,
-                    RGB_Image,
-                    CAMERA_FRAME_WIDTH,
-                    CAMERA_FRAME_HEIGHT,
-                    CAMERA_FRAME_BAYER,
-                    1U);
-        /* Use RGB image for further processing */
-        inFrame = RGB_Image;
-    #endif
+    /* Convert input frame and place it into RGB_Image buffer */
+    convert_frame_to_rgb(inFrame);
+
+    /* Resize RGB image to fit ML model expected size */
+    image_resize(RGB_Image,
+                 RGB_IMAGE_WIDTH,
+                 RGB_IMAGE_HEIGHT,
+                 (uint8_t *)ML_Image,
+                 ML_IMAGE_WIDTH,
+                 ML_IMAGE_HEIGHT,
+                 IMAGE_FORMAT_RGB888,
+                 IMAGE_FORMAT_RGB888);
 
     /* Release input frame */
     if (vStream_VideoIn->ReleaseBlock() != VSTREAM_OK) {
         printf_err("Failed to release video input frame\n");
     }
-
-    /* Resize image to fit ML model expected size */
-    image_resize(inFrame,
-                CAMERA_FRAME_WIDTH,
-                CAMERA_FRAME_HEIGHT,
-                (uint8_t *)ML_Image,
-                ML_IMAGE_WIDTH,
-                ML_IMAGE_HEIGHT);
 
     return true;
 }
@@ -217,7 +182,8 @@ void close_img_source(const uint32_t idx)
                               DISPLAY_FRAME_WIDTH,
                               DISPLAY_FRAME_HEIGHT,
                              (DISPLAY_FRAME_WIDTH - ML_IMAGE_WIDTH) / 2,
-                             (DISPLAY_FRAME_HEIGHT - ML_IMAGE_HEIGHT)/2);
+                             (DISPLAY_FRAME_HEIGHT - ML_IMAGE_HEIGHT)/2,
+                             IMAGE_FORMAT_RGB888);
 
     /* Release output frame */
     if (vStream_VideoOut->ReleaseBlock() != VSTREAM_OK) {
@@ -285,4 +251,94 @@ static void DrawBox(uint8_t *imageData, const uint32_t x0, const uint32_t y0, co
         dst_0 += step;
         dst_1 += step;
     }
+}
+
+/*
+  Converts camera frame and copies it to RGB image buffer.
+
+  Camera frame may be square or non-square and must be in RAW8 or RGB565 format.
+  RGB image buffer is always square and is in RGB888 format.
+
+  The function handles the following cases:
+    - If the camera frame is square and matches the RGB image size:
+      - crop and debayer the RAW8 camera frame
+      - convert RGB565 camera frame to RGB888
+    - If the camera frame is square and larger than the RGB image size:
+      - crop and debayer the RAW8 camera frame
+      - resize RGB565 camera frame to fit into RGB image buffer.
+    - If the camera frame is not square:
+      - crop and debayer the RAW8 camera frame
+      - crops RGB565 camera frame to fit into RGB image buffer.
+*/
+static void convert_frame_to_rgb(uint8_t *inFrame) {
+    #if (CAMERA_FRAME_WIDTH == CAMERA_FRAME_HEIGHT)
+      /* Camera frame is square */
+      #if (CAMERA_FRAME_WIDTH == RGB_IMAGE_WIDTH) && (CAMERA_FRAME_HEIGHT == RGB_IMAGE_HEIGHT)
+        /* Camera frame size matches RGB image size */
+        #if (CAMERA_FRAME_TYPE == CAMERA_FRAME_TYPE_RAW8)
+            /* For RAW8, crop and debayer into RGB image buffer (RGB888) */
+            crop_and_debayer(inFrame,
+                            CAMERA_FRAME_WIDTH,
+                            CAMERA_FRAME_HEIGHT,
+                            0, 0, /* Crop from top-left corner */
+                            RGB_Image,
+                            RGB_IMAGE_WIDTH,
+                            RGB_IMAGE_HEIGHT,
+                            CAMERA_FRAME_BAYER);
+        #else
+            /* For RGB565, convert frame to fit into RGB image buffer (RGB888) */
+            convert_rgb565_to_rgb888(inFrame, RGB_Image, CAMERA_FRAME_WIDTH, CAMERA_FRAME_HEIGHT);
+        #endif
+      #else
+        /* Camera frame size is larger than RGB image size */
+        #if (CAMERA_FRAME_TYPE == CAMERA_FRAME_TYPE_RAW8)
+            /* For RAW8, crop and debayer into RGB image buffer (RGB888) */
+            crop_and_debayer(inFrame,
+                            CAMERA_FRAME_WIDTH,
+                            CAMERA_FRAME_HEIGHT,
+                            (CAMERA_FRAME_WIDTH - RGB_IMAGE_WIDTH) / 2, /* Center crop */
+                            (CAMERA_FRAME_HEIGHT - RGB_IMAGE_HEIGHT) / 2,
+                            RGB_Image,
+                            RGB_IMAGE_WIDTH,
+                            RGB_IMAGE_HEIGHT,
+                            CAMERA_FRAME_BAYER);
+        #else
+            /* For RGB565, resize frame to fit into RGB image buffer (RGB888) */
+            image_resize(inFrame,
+                        CAMERA_FRAME_WIDTH,
+                        CAMERA_FRAME_HEIGHT,
+                        RGB_Image,
+                        RGB_IMAGE_WIDTH,
+                        RGB_IMAGE_HEIGHT,
+                        IMAGE_FORMAT_RGB565,
+                        IMAGE_FORMAT_RGB888);
+        #endif
+      #endif
+    #endif
+
+    #if (CAMERA_FRAME_WIDTH != CAMERA_FRAME_HEIGHT)
+      /* Camera frame is not square, crop it to fit RGB buffer */
+      #if (CAMERA_FRAME_TYPE == CAMERA_FRAME_TYPE_RAW8)
+        /* For RAW8, crop and debayer to RGB888 */
+        crop_and_debayer(inFrame,
+                        CAMERA_FRAME_WIDTH,
+                        CAMERA_FRAME_HEIGHT,
+                        (CAMERA_FRAME_WIDTH - RGB_IMAGE_WIDTH) / 2, /* Center crop */
+                        (CAMERA_FRAME_HEIGHT - RGB_IMAGE_HEIGHT) / 2,
+                        RGB_Image,
+                        RGB_IMAGE_WIDTH,
+                        RGB_IMAGE_HEIGHT,
+                        CAMERA_FRAME_BAYER);
+      #else
+        /* For RGB565, crop and convert to RGB888 */
+        crop_rgb565_to_rgb888(inFrame,
+                            CAMERA_FRAME_WIDTH,
+                            CAMERA_FRAME_HEIGHT,
+                            RGB_Image,
+                            (CAMERA_FRAME_WIDTH - RGB_IMAGE_WIDTH) / 2, /* Center crop */
+                            (CAMERA_FRAME_HEIGHT - RGB_IMAGE_HEIGHT) / 2,
+                            RGB_IMAGE_WIDTH,
+                            RGB_IMAGE_HEIGHT);
+      #endif
+    #endif
 }

@@ -47,9 +47,9 @@
 
 //  <s>NN Model Buffer Section Name
 //  <i> Define the name of the NN model buffer section
-//  <i> Default: ".dtcm.nn_model"
+//  <i> Default: "nn_model"
 #ifndef NN_MODEL_BUF_SECTION
-#define NN_MODEL_BUF_SECTION        ".dtcm.nn_model"
+#define NN_MODEL_BUF_SECTION        "nn_model"
 #endif
 //  <o>NN Model Buffer Alignment
 //  <i> Define the NN model buffer alignment in bytes

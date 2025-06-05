@@ -26,35 +26,22 @@
 
 //  <o>Camera Frame Width
 //  <i> Define the camera frame width.
-//  <i> Default: 0
+//  <i> Common camera frame widths: 320, 640, 1024, 1280.
+//  <i> Default: 640
 #ifndef CAMERA_FRAME_WIDTH
 #define CAMERA_FRAME_WIDTH          1280
 #endif
 
 //  <o>Camera Frame Height
 //  <i> Define the camera frame height.
-//  <i> Default: 0
+//  <i> Common camera frame heights: 240, 480, 600, 720.
+//  <i> Default: 480
 #ifndef CAMERA_FRAME_HEIGHT
 #define CAMERA_FRAME_HEIGHT         720
 #endif
 
-//  <s>Frame Buffer Section Name
-//  <i> Define the name of the camera frame buffer section
-//  <i> Default: ".bss.camera_frame_buf"
-#ifndef CAMERA_FRAME_BUF_SECTION
-#define CAMERA_FRAME_BUF_SECTION    ".bss.camera_frame_buf"
-#endif
-
-//  <o>Frame Buffer Alignment
-//  <i> Define the camera frame buffer alignment in bytes
-//  <i> Default: 32
-#ifndef CAMERA_FRAME_BUF_ALIGNMENT
-#define CAMERA_FRAME_BUF_ALIGNMENT  32
-#endif
-
-//  <o>Frame Type <0=>RAW <1=>RGB
+//  <o>Frame Type <0=>RAW8 <1=>RGB565
 //  <i> Define whether camera frame is raw or RGB.
-//  <i> RGB888 is assumed for non-raw frames.
 //  <i> Default: 0
 #ifndef CAMERA_FRAME_TYPE
 #define CAMERA_FRAME_TYPE           0
@@ -67,6 +54,48 @@
 #define CAMERA_FRAME_BAYER          3
 #endif
 
+//  <s>Frame Buffer Section Name
+//  <i> Define the name of the camera frame buffer section.
+//  <i> Default: ".bss.camera_frame_buf"
+#ifndef CAMERA_FRAME_BUF_SECTION
+#define CAMERA_FRAME_BUF_SECTION    ".bss.camera_frame_buf"
+#endif
+
+//  <o>Frame Buffer Alignment
+//  <i> Define the camera frame buffer alignment in bytes.
+//  <i> Default: 32
+#ifndef CAMERA_FRAME_BUF_ALIGNMENT
+#define CAMERA_FRAME_BUF_ALIGNMENT  32
+#endif
+
+//  <o>RGB Image Width
+//  <i> Define the RGB image width.
+//  <i> Default: 384
+#ifndef RGB_IMAGE_WIDTH
+#define RGB_IMAGE_WIDTH             384
+#endif
+
+//  <o>RGB Image Height
+//  <i> Define the RGB image height.
+//  <i> Default: 384
+#ifndef RGB_IMAGE_HEIGHT
+#define RGB_IMAGE_HEIGHT            384
+#endif
+
+//  <s>RGB Image Buffer Section Name
+//  <i> Define the name of the RGB image buffer section.
+//  <i> Default: ".bss.rgb_image_buf"
+#ifndef RGB_IMAGE_BUF_SECTION
+#define RGB_IMAGE_BUF_SECTION       ".bss.rgb_image_buf"
+#endif
+
+//  <o>RGB Image Buffer Alignment
+//  <i>Define the RGB image buffer alignment in bytes.
+//  <i>Default: 4
+#ifndef RGB_IMAGE_BUF_ALIGNMENT
+#define RGB_IMAGE_BUF_ALIGNMENT     4
+#endif
+
 // </h>
 
 // <h>Display Configuration
@@ -74,14 +103,16 @@
 
 //  <o>Display Frame Width
 //  <i> Defines the display frame width.
-//  <i> Default: 0
+//  <i> Common display frame widths: 480, 800, 1024, 1280.
+//  <i> Default: 800
 #ifndef DISPLAY_FRAME_WIDTH
 #define DISPLAY_FRAME_WIDTH         480
 #endif
 
 //  <o>Display Frame Height
 //  <i> Defines the display frame height.
-//  <i> Default: 0
+//  <i> Common display frame heights: 320, 480, 600, 800.
+//  <i> Default: 480
 #ifndef DISPLAY_FRAME_HEIGHT
 #define DISPLAY_FRAME_HEIGHT        800
 #endif
