@@ -44,7 +44,7 @@ project:
         - CMSIS-RTOS2
 
   define:
-    - ACTIVATION_BUF_SZ: 131072
+    - ACTIVATION_BUF_SZ: 102400         # Minimum that this app requires is 100988
 
   add-path:
     - ./include/

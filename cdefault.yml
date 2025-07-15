@@ -30,6 +30,8 @@ default:
       C:
         - -std=c17
         - -Wno-license-management
+      ASM:
+        - -masm=auto
       Link:
         - --entry=Reset_Handler
         - --verbose

@@ -25,6 +25,8 @@ solution:
     - pack: ARM::V2M_MPS3_SSE_310_BSP@1.4.0
     - pack: ARM::SSE_315_BSP@1.0.0
     - pack: ARM::SSE_320_BSP@1.0.0
+    - pack: Keil::B-U585I-IOT02A_BSP
+    - pack: Keil::STM32U5xx_DFP
 
   build-types:
     - type: Debug-Live_Stream
@@ -116,6 +118,13 @@ solution:
       device: ARM::SSE-320-FVP
       variables:
         - Board-Layer: ../board/Corstone-320/Board-U85.clayer.yml
+
+    # B-U585I-IOT02A board
+    - type: STM32U585AIIx
+      device: STM32U585AIIx
+      board: B-U585I-IOT02A:Rev.C
+      variables:
+        - Board-Layer: $SolutionDir()$/Board/B-U585I-IOT02A/Board.clayer.yml
 
     # Hardware targets
     # - type: 

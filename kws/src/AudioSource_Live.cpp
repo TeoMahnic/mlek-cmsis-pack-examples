@@ -34,7 +34,9 @@
 #define MONO_BLOCK_SAMPLES   (8000)
 #define MONO_BLOCK_SIZE      (MONO_BLOCK_SAMPLES * 2)
 
+#ifndef CMSIS_VSTREAM_AUDIO_IN_MONO
 int16_t stereoBuffer[STEREO_BLOCK_SAMPLES * STEREO_BLOCK_COUNT];
+#endif
 int16_t monoBuffer[MONO_BLOCK_SAMPLES * MONO_BLOCK_COUNT];
 
 uint32_t mono_block;
@@ -70,7 +72,11 @@ void audio_capture (void *arg) {
 
   /* Initialize audio in stream and set the receive buffer */
   vStream_AudioIn->Initialize(AudioDrv_Event_Callback);
+#ifndef CMSIS_VSTREAM_AUDIO_IN_MONO
   vStream_AudioIn->SetBuf(stereoBuffer, STEREO_BLOCK_COUNT * STEREO_BLOCK_SIZE, STEREO_BLOCK_SIZE);
+#else
+  vStream_AudioIn->SetBuf(monoBuffer, MONO_BLOCK_COUNT * MONO_BLOCK_SIZE, MONO_BLOCK_SIZE);
+#endif
 
   /* Start audio receiver */
   vStream_AudioIn->Start(VSTREAM_MODE_CONTINUOUS);
@@ -82,6 +88,7 @@ void audio_capture (void *arg) {
       /* Process block of currently received audio samples */
       buf = (int16_t *)vStream_AudioIn->GetBlock();
 
+#ifndef CMSIS_VSTREAM_AUDIO_IN_MONO
       /* Recalculate offset and gain */
       audioOffset = CalculateOffset(buf, STEREO_BLOCK_SAMPLES);
       audioGain = CalculateScale(buf, STEREO_BLOCK_SAMPLES);
@@ -94,6 +101,20 @@ void audio_capture (void *arg) {
 
       /* Populate the last block of the mono buffer from the freshly captured stereo audio */
       ConvertToMono(&monoBuffer[MONO_BLOCK_SAMPLES * (MONO_BLOCK_COUNT - 1)], buf, MONO_BLOCK_SAMPLES);
+#else
+      /* Recalculate offset and gain */
+      audioOffset = CalculateOffset(buf, MONO_BLOCK_SAMPLES);
+      audioGain = CalculateScale(buf, MONO_BLOCK_SAMPLES);
+
+      /* Apply offset and scaling factor (gain) to each audio sample */
+      ApplyGainAndOffset(buf, MONO_BLOCK_SAMPLES, audioOffset, audioGain);
+
+      /* Move mono buffer data to the beginning (shift by one block) */
+      memcpy(monoBuffer, &monoBuffer[MONO_BLOCK_SAMPLES], MONO_BLOCK_SIZE);
+
+      /* Add new mono buffer data */
+      memcpy(&monoBuffer[MONO_BLOCK_SAMPLES * (MONO_BLOCK_COUNT - 1)], buf, MONO_BLOCK_SIZE);
+#endif
 
       /* Release buffer block to vStream driver */
       vStream_AudioIn->ReleaseBlock();
