@@ -26,7 +26,7 @@
 
 #include "cmsis_vio.h"
 #include "GPIO_STM32.h"
-//#include "WiFi_EMW3080.h"
+#include "WiFi_EMW3080.h"
 
 #include "b_u585i_iot02a_bus.h"
 #include "b_u585i_iot02a_audio.h"
@@ -116,15 +116,15 @@ static void MX_ICACHE_Init(void);
 static void GPIO_SignalEvent (ARM_GPIO_Pin_t pin, uint32_t event) {
  
   switch (pin) {
-//    case GPIO_PIN_ID_PORTD(14):                         // MXCHIP_NOTIFY pin (PD14)
-//      if ((event & ARM_GPIO_EVENT_RISING_EDGE) != 0U) { // If rising edge was detected
-//        WiFi_EMW3080_Pin_NOTIFY_Rising_Edge();
-//      }
-//      break;
-//    case GPIO_PIN_ID_PORTG(15):                         // MXCHIP_FLOW pin (PG15)
-//      if ((event & ARM_GPIO_EVENT_RISING_EDGE) != 0U) { // If rising edge was detected
-//        WiFi_EMW3080_Pin_FLOW_Rising_Edge();
-//      }
+    case GPIO_PIN_ID_PORTD(14):                         // MXCHIP_NOTIFY pin (PD14)
+      if ((event & ARM_GPIO_EVENT_RISING_EDGE) != 0U) { // If rising edge was detected
+        WiFi_EMW3080_Pin_NOTIFY_Rising_Edge();
+      }
+      break;
+    case GPIO_PIN_ID_PORTG(15):                         // MXCHIP_FLOW pin (PG15)
+      if ((event & ARM_GPIO_EVENT_RISING_EDGE) != 0U) { // If rising edge was detected
+        WiFi_EMW3080_Pin_FLOW_Rising_Edge();
+      }
       break;
     case GPIO_PIN_ID_PORTE(8):                          // UCPD_FLT pin (PE8)
       if ((event & ARM_GPIO_EVENT_FALLING_EDGE) != 0U) {// If falling edge was detected
@@ -1324,8 +1324,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

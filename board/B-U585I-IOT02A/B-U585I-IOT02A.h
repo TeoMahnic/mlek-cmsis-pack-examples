@@ -26,7 +26,7 @@
 #include "Driver_USART.h"
 #include "Driver_USBD.h"
 #include "Driver_USBH.h"
-//#include "Driver_WiFi.h"
+#include "Driver_WiFi.h"
 #include "cmsis_vstream.h"
 
 // Arduino Connector Digital I/O
@@ -54,7 +54,7 @@
 // CMSIS Driver instances of Board peripherals
 #define CMSIS_DRIVER_USART  2           // Driver_USART2
 #define CMSIS_DRIVER_USBD   0           // Driver_USBD0
-//#define CMSIS_DRIVER_WIFI   0           // Driver_WiFi0
+#define CMSIS_DRIVER_WIFI   0           // Driver_WiFi0
 
 // CMSIS Driver instance for STDIO retarget
 #define RETARGET_STDIO_UART 1
@@ -66,8 +66,9 @@ extern ARM_DRIVER_USART     ARM_Driver_USART_(ARDUINO_UNO_UART);        // UART
 extern ARM_DRIVER_USART     ARM_Driver_USART_(CMSIS_DRIVER_USART);      // STMod UART
 extern ARM_DRIVER_USART     ARM_Driver_USART_(RETARGET_STDIO_UART);     // ST-Link
 extern ARM_DRIVER_USBD      ARM_Driver_USBD_(CMSIS_DRIVER_USBD);        // USB Device
-//extern ARM_DRIVER_WIFI      ARM_Driver_WiFi_(CMSIS_DRIVER_WIFI);        // WiFi
+extern ARM_DRIVER_WIFI      ARM_Driver_WiFi_(CMSIS_DRIVER_WIFI);        // WiFi
 extern vStreamDriver_t      Driver_vStreamAccelerometer;                // vStream Accelerometer
+extern vStreamDriver_t      Driver_vStreamAudioIn;                      // vStream Audio In
 
 #ifdef   CMSIS_shield_header
 #include CMSIS_shield_header
