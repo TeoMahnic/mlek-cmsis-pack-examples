@@ -59,7 +59,7 @@
 #define __RAM0_BASE 0x20000000
 //   <o> Region size [bytes] <0x0-0xFFFFFFFF:8>
 //   <i> Defines size of memory region. Default: 0x00040000
-#define __RAM0_SIZE 0x00040000
+#define __RAM0_SIZE 0x000C0000
 // </h>
 
 // <h> __RAM1 (unused)
@@ -92,7 +92,6 @@
 // </h>
 
 // <n> Resources that are not allocated to linker regions
-// <i> rwx RAM:  SRAM3 from DFP:           BASE: 0x20040000  SIZE: 0x00080000
 // <i> rwx RAM:  RAM-External from BSP:    BASE: 0x90000000  SIZE: 0x00800000
 // <i> rx ROM:   Flash-External from BSP:  BASE: 0x70000000  SIZE: 0x04000000
 

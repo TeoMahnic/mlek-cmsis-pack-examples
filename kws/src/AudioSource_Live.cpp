@@ -26,20 +26,21 @@
 #include "log_macros.h"
 #include "arm_math.h"
 
-/* Define stereo (audio in) and mono (audio for inference) buffers */
-#define STEREO_BLOCK_COUNT   (2)
-#define STEREO_BLOCK_SAMPLES (16000)
-#define STEREO_BLOCK_SIZE    (STEREO_BLOCK_SAMPLES * 2)
-#define MONO_BLOCK_COUNT     (2)
-#define MONO_BLOCK_SAMPLES   (8000)
-#define MONO_BLOCK_SIZE      (MONO_BLOCK_SAMPLES * 2)
-
-#ifndef CMSIS_VSTREAM_AUDIO_IN_MONO
-int16_t stereoBuffer[STEREO_BLOCK_SAMPLES * STEREO_BLOCK_COUNT];
+/* Define audio input and inference buffers */
+#define AUDIO_IN_BLOCK_COUNT    (2)
+#ifndef CMSIS_VSTREAM_AUDIO_IN_MONO     // If audio is captured in stereo
+#define AUDIO_IN_BLOCK_SAMPLES  (16000) // 0.5 seconds at 16 kHz (in stereo)
+#else                                   // If audio is captured in mono
+#define AUDIO_IN_BLOCK_SAMPLES  (8000)  // 0.5 seconds at 16 kHz (in mono)
 #endif
-int16_t monoBuffer[MONO_BLOCK_SAMPLES * MONO_BLOCK_COUNT];
+#define AUDIO_IN_BLOCK_SIZE     (AUDIO_IN_BLOCK_SAMPLES * sizeof(int16_t))
 
-uint32_t mono_block;
+#define INFER_BLOCK_COUNT       (2)
+#define INFER_BLOCK_SAMPLES     (8000)  // 0.5 seconds at 16 kHz (conditioned and mono)
+#define INFER_BLOCK_SIZE        (INFER_BLOCK_SAMPLES * sizeof(int16_t))
+
+int16_t audioInBuffer[AUDIO_IN_BLOCK_SAMPLES * AUDIO_IN_BLOCK_COUNT];
+int16_t inferBuffer[INFER_BLOCK_SAMPLES * INFER_BLOCK_COUNT];
 
 /* Reference to the underlying CMSIS vStream driver */
 extern vStreamDriver_t          Driver_vStreamAudioIn;
@@ -61,22 +62,16 @@ void AudioDrv_Event_Callback (uint32_t event) {
 }
 
 /**
-  Process stereo buffer audio data and convert it to fit into mono buffer
+  Process buffer audio input data and condition it for buffer for inference
 */
 void audio_capture (void *arg) {
   int16_t *buf;
   int32_t audioGain   = 0;
   int32_t audioOffset = 0;
 
-  mono_block = 0;
-
   /* Initialize audio in stream and set the receive buffer */
   vStream_AudioIn->Initialize(AudioDrv_Event_Callback);
-#ifndef CMSIS_VSTREAM_AUDIO_IN_MONO
-  vStream_AudioIn->SetBuf(stereoBuffer, STEREO_BLOCK_COUNT * STEREO_BLOCK_SIZE, STEREO_BLOCK_SIZE);
-#else
-  vStream_AudioIn->SetBuf(monoBuffer, MONO_BLOCK_COUNT * MONO_BLOCK_SIZE, MONO_BLOCK_SIZE);
-#endif
+  vStream_AudioIn->SetBuf(audioInBuffer, AUDIO_IN_BLOCK_COUNT * AUDIO_IN_BLOCK_SIZE, AUDIO_IN_BLOCK_SIZE);
 
   /* Start audio receiver */
   vStream_AudioIn->Start(VSTREAM_MODE_CONTINUOUS);
@@ -88,32 +83,21 @@ void audio_capture (void *arg) {
       /* Process block of currently received audio samples */
       buf = (int16_t *)vStream_AudioIn->GetBlock();
 
+      /* Recalculate offset and gain */
+      audioOffset = CalculateOffset(buf, AUDIO_IN_BLOCK_SAMPLES);
+      audioGain = CalculateScale(buf, AUDIO_IN_BLOCK_SAMPLES);
+
+      /* Apply offset and scaling factor (gain) to each audio sample */
+      ApplyGainAndOffset(buf, AUDIO_IN_BLOCK_SAMPLES, audioOffset, audioGain);
+
+      /* Move 2nd block of inference buffer data to the beginning */
+      memcpy(inferBuffer, &inferBuffer[INFER_BLOCK_SAMPLES], INFER_BLOCK_SAMPLES * (INFER_BLOCK_COUNT - 1) * 2);
+
+      /* Populate the last block of the buffer for inference with freshly captured and conditioned audio data */
 #ifndef CMSIS_VSTREAM_AUDIO_IN_MONO
-      /* Recalculate offset and gain */
-      audioOffset = CalculateOffset(buf, STEREO_BLOCK_SAMPLES);
-      audioGain = CalculateScale(buf, STEREO_BLOCK_SAMPLES);
-
-      /* Apply offset and scaling factor (gain) to each audio sample */
-      ApplyGainAndOffset(buf, STEREO_BLOCK_SAMPLES, audioOffset, audioGain);
-
-      /* Move mono buffer data to the beginning (shift by one block) */
-      memcpy(monoBuffer, &monoBuffer[MONO_BLOCK_SAMPLES], MONO_BLOCK_SAMPLES * (MONO_BLOCK_COUNT - 1) * 2);
-
-      /* Populate the last block of the mono buffer from the freshly captured stereo audio */
-      ConvertToMono(&monoBuffer[MONO_BLOCK_SAMPLES * (MONO_BLOCK_COUNT - 1)], buf, MONO_BLOCK_SAMPLES);
+      ConvertToMono(&inferBuffer[INFER_BLOCK_SAMPLES * (INFER_BLOCK_COUNT - 1)], buf, INFER_BLOCK_SAMPLES);
 #else
-      /* Recalculate offset and gain */
-      audioOffset = CalculateOffset(buf, MONO_BLOCK_SAMPLES);
-      audioGain = CalculateScale(buf, MONO_BLOCK_SAMPLES);
-
-      /* Apply offset and scaling factor (gain) to each audio sample */
-      ApplyGainAndOffset(buf, MONO_BLOCK_SAMPLES, audioOffset, audioGain);
-
-      /* Move mono buffer data to the beginning (shift by one block) */
-      memcpy(monoBuffer, &monoBuffer[MONO_BLOCK_SAMPLES], MONO_BLOCK_SIZE);
-
-      /* Add new mono buffer data */
-      memcpy(&monoBuffer[MONO_BLOCK_SAMPLES * (MONO_BLOCK_COUNT - 1)], buf, MONO_BLOCK_SIZE);
+      memcpy(&inferBuffer[INFER_BLOCK_SAMPLES * (INFER_BLOCK_COUNT - 1)], buf, INFER_BLOCK_SIZE);
 #endif
 
       /* Release buffer block to vStream driver */
@@ -251,12 +235,12 @@ const char* get_audio_name(const uint32_t idx)
 
 const int16_t* get_audio_array(const uint32_t idx)
 {
-    /* Mono buffer is the audio source array */
-    return monoBuffer;
+    /* Inference buffer is the audio source array for inference */
+    return inferBuffer;
 }
 
 uint32_t get_audio_array_size(const uint32_t idx)
 {
     /* Return number of elements in audio array */
-    return MONO_BLOCK_SAMPLES * MONO_BLOCK_COUNT;
+    return INFER_BLOCK_SAMPLES * INFER_BLOCK_COUNT;
 }
